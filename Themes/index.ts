@@ -15,6 +15,7 @@ const Colors = {
     volumeYellow: '#facc15',
     costGreen: '#22c55e',
     rateGray: '#6b7280',
+    error: '#C10F0FFF'
 };
 
 const FontSizes = {
