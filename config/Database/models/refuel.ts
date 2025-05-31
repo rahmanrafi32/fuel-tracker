@@ -211,7 +211,7 @@ export async function updateRefuel(id: number, refuelData: UpdateRefuelLogData):
     }
 
     if (fields.length === 0) {
-        return; // Nothing to update
+        return; 
     }
 
     fields.push('updated_at = CURRENT_TIMESTAMP');
