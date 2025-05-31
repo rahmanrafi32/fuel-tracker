@@ -12,7 +12,6 @@ export default function Index() {
     useEffect(() => {
         const setupDatabase = async () => {
             try {
-                console.log('Initializing database...');
                 await initializeDatabase();
                 console.log('Database initialized successfully!');
                 setIsDbReady(true);

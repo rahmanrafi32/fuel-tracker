@@ -2,7 +2,6 @@ import React, {JSX, useCallback, useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Animated,
     RefreshControl,
     SafeAreaView,
     ScrollView,
