@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     View,
     Text,
@@ -7,14 +7,15 @@ import {
     StyleSheet,
     ScrollView,
     Switch,
-    Modal, Alert
+    Modal,
+    Alert
 } from 'react-native';
 import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
 import {MaterialIcons, Ionicons} from '@expo/vector-icons';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import theme from '@/Themes';
 import { refuels } from '@/config/Database';
-import type { CreateRefuelLogData } from '@/config/Database';
+import type { RefuelLog, UpdateRefuelLogData } from '@/config/Database';
 
 interface FuelEntryData {
     fuelDate: Date;
@@ -40,13 +41,17 @@ interface DropdownModalProps {
     title: string;
 }
 
-interface FuelEntryScreenProps {
-    onBack?: () => void;
-    onSave?: (data: FuelEntryData) => void;
-}
+type RouteParams = {
+    editFuel: {  // Changed from 'EditFuelEntry' to match your route name
+        entryId: string | number;  // Made more flexible for different ID types
+    };
+};
 
-export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'onBack'>) {
+export default function EditFuelEntryScreen() {
     const navigation = useNavigation();
+    const route = useRoute<RouteProp<RouteParams, 'editFuel'>>();
+    const entryId = route.params?.entryId;
+
     const [fuelDate, setFuelDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [odometer, setOdometer] = useState<string>('');
@@ -55,15 +60,61 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
     const [notes, setNotes] = useState<string>('');
     const [fullTank, setFullTank] = useState<boolean>(true);
     const [missedLastFuel, setMissedLastFuel] = useState<boolean>(false);
-    
+
     const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('KM');
     const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>('L');
     const [showDistanceDropdown, setShowDistanceDropdown] = useState<boolean>(false);
     const [showVolumeDropdown, setShowVolumeDropdown] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+    // Add error state for debugging
+    const [loadError, setLoadError] = useState<string | null>(null);
+
     const distanceUnits: DistanceUnit[] = ['KM', 'Miles'];
     const volumeUnits: VolumeUnit[] = ['L', 'Gallon (US)', 'Gallon (UK)'];
+
+    // Load existing entry data
+    useEffect(() => {
+        if (entryId) {
+            loadEntryData();
+        } else {
+            setLoadError('No entry ID provided');
+            setIsLoading(false);
+        }
+    }, [entryId]);
+
+    const loadEntryData = async () => {
+        try {
+            setIsLoading(true);
+            setLoadError(null);
+
+            // Convert entryId to number if it's a string
+            const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
+            const entry = await refuels.findById(id);
+
+            if (entry) {
+                setFuelDate(new Date(entry.date));
+                setOdometer(entry.odometer.toString());
+                setFuelVolume(entry.liters.toString());
+                setFuelUnitPrice((entry.cost / entry.liters).toFixed(2));
+                setNotes(entry.notes || '');
+                setFullTank(entry.isFullTank || false);
+                
+            } else {
+                setLoadError('Entry not found');
+                Alert.alert('Error', 'Entry not found');
+                navigation.goBack();
+            }
+        } catch (error: any) {
+            setLoadError(`Failed to load entry: ${error.message}`);
+            Alert.alert('Error', 'Failed to load entry data');
+            navigation.goBack();
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const convertToStandardUnits = () => {
         let liters = Number(fuelVolume);
@@ -84,79 +135,100 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
         return { liters, odometerReading };
     };
 
-
-
-    const handleSave = async (): Promise<void> => {
+    const handleEdit = async (): Promise<void> => {
         try {
             setIsSaving(true);
-
-            // Validate form
-            // const validationError = validateForm();
-            // if (validationError) {
-            //     Alert.alert('Validation Error', validationError);
-            //     return;
-            // }
 
             // Convert units and prepare data
             const { liters, odometerReading } = convertToStandardUnits();
             const totalCost = liters * Number(fuelUnitPrice);
 
-            const refuelData: CreateRefuelLogData = {
-                vehicleId: 1,
-                date: fuelDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            const updateData: UpdateRefuelLogData = {
+                date: fuelDate.toISOString().split('T')[0], 
                 odometer: odometerReading,
                 liters: liters,
                 cost: totalCost,
-                fuelType: 'petrol', 
-                // location: location.trim() || undefined,
+                fuelType: 'petrol',
                 notes: notes.trim() || undefined,
                 isFullTank: fullTank
             };
-
-            // Save to database
-            const refuelId = await refuels.create(refuelData);
-
-            console.log('Refuel saved successfully with ID:', refuelId);
-
-            // Call the onSave callback if provided
-            if (onSave) {
-                const formData: FuelEntryData = {
-                    fuelDate,
-                    odometer,
-                    fuelVolume,
-                    fuelUnitPrice,
-                    notes,
-                    fullTank,
-                    missedLastFuel,
-                    distanceUnit,
-                    volumeUnit
-                };
-                onSave(formData);
-            }
+            
+            const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
+            
+            await refuels.update(id, updateData);
+            
 
             // Show success message
             Alert.alert(
                 'Success',
-                'Refuel data saved successfully!',
+                'Entry updated successfully!',
                 [
                     {
                         text: 'OK',
                         onPress: () => {
-                            handleBack();
+                            navigation.goBack();
                         }
                     }
                 ]
             );
 
         } catch (error) {
-            console.error('Error saving refuel data:', error);
+            console.error('Error updating refuel data:', error);
             Alert.alert(
                 'Error',
-                'Failed to save refuel data. Please try again.',
+                'Failed to update entry. Please try again.',
                 [{ text: 'OK' }]
             );
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDelete = (): void => {
+        Alert.alert(
+            'Delete Entry',
+            'Are you sure you want to delete this entry? This action cannot be undone.',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: confirmDelete
+                }
+            ]
+        );
+    };
+
+    const confirmDelete = async (): Promise<void> => {
+        try {
+            setIsDeleting(true);
+            const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
+            await refuels.delete(id);
+            Alert.alert(
+                'Success',
+                'Entry deleted successfully!',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            navigation.goBack();
+                        }
+                    }
+                ]
+            );
+
+        } catch (error) {
+            console.error('Error deleting refuel data:', error);
+            Alert.alert(
+                'Error',
+                'Failed to delete entry. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -218,6 +290,33 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
             </TouchableOpacity>
         </Modal>
     );
+
+    // Enhanced loading state with debug info
+    if (isLoading) {
+        return (
+            <View style={[styles.container, styles.centerContent]}>
+                <Text>Loading entry {entryId}...</Text>
+                {loadError && <Text style={{color: 'red', marginTop: 10}}>{loadError}</Text>}
+            </View>
+        );
+    }
+
+    // Show error state if there's an issue
+    if (loadError) {
+        return (
+            <View style={[styles.container, styles.centerContent]}>
+                <Text style={{color: 'red', textAlign: 'center', marginBottom: 20}}>
+                    Error: {loadError}
+                </Text>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Text>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -364,15 +463,35 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
 
                 {/* Action Buttons */}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.backButtonSecondary} onPress={handleBack}>
-                        <Ionicons name="arrow-back" size={20} color={theme.Colors.primary} style={styles.buttonIcon}/>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={handleBack}
+                        disabled={isSaving || isDeleting}
+                    >
+                        <Ionicons name="arrow-back" size={16} color={theme.Colors.primary}/>
                         <Text style={styles.backButtonText}>BACK</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                        <Ionicons name="checkmark-circle" size={20} color={theme.Colors.white}
-                                  style={styles.buttonIcon}/>
-                        <Text style={styles.saveButtonText}>SAVE ENTRY</Text>
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={handleDelete}
+                        disabled={isSaving || isDeleting}
+                    >
+                        <Ionicons name="trash" size={16} color={theme.Colors.white}/>
+                        <Text style={styles.deleteButtonText}>
+                            {isDeleting ? 'DELETING...' : 'DELETE'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={handleEdit}
+                        disabled={isSaving || isDeleting}
+                    >
+                        <Ionicons name="checkmark-circle" size={16} color={theme.Colors.white}/>
+                        <Text style={styles.editButtonText}>
+                            {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -405,6 +524,11 @@ const styles = StyleSheet.create({
         paddingBottom: theme.Spacing.xl,
         backgroundColor: theme.Colors.background,
     },
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
     form: {
         backgroundColor: theme.Colors.cardBackground,
         borderRadius: theme.BorderRadius.lg,
@@ -414,28 +538,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         shadowOffset: {width: 0, height: 4},
         elevation: 4,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: theme.Spacing.lg,
-        paddingBottom: theme.Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    backButton: {
-        padding: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm,
-        backgroundColor: '#fff7ed',
-    },
-    headerTitle: {
-        fontSize: theme.FontSizes.large,
-        fontWeight: theme.FontWeight.bold,
-        color: theme.Colors.textPrimary,
-    },
-    headerSpacer: {
-        width: 40,
     },
     fieldRow: {
         flexDirection: 'row',
@@ -538,12 +640,12 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        gap: theme.Spacing.md,
+        gap: theme.Spacing.sm,
     },
-    backButtonSecondary: {
+    backButton: {
         backgroundColor: theme.Colors.background,
-        paddingVertical: theme.Spacing.md,
-        paddingHorizontal: theme.Spacing.lg,
+        paddingVertical: theme.Spacing.sm,
+        paddingHorizontal: theme.Spacing.md,
         borderRadius: theme.BorderRadius.md,
         alignItems: 'center',
         flexDirection: 'row',
@@ -555,30 +657,45 @@ const styles = StyleSheet.create({
     backButtonText: {
         color: theme.Colors.primary,
         fontWeight: theme.FontWeight.bold,
-        fontSize: theme.FontSizes.medium,
+        fontSize: theme.FontSizes.small,
+        marginLeft: 4,
     },
-    saveButton: {
-        backgroundColor: theme.Colors.primary,
-        paddingVertical: theme.Spacing.md,
-        paddingHorizontal: theme.Spacing.lg,
+    deleteButton: {
+        backgroundColor: '#F44336',
+        paddingVertical: theme.Spacing.sm,
+        paddingHorizontal: theme.Spacing.md,
         borderRadius: theme.BorderRadius.md,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        flex: 2,
+        flex: 1,
+    },
+    deleteButtonText: {
+        color: theme.Colors.white,
+        fontWeight: theme.FontWeight.bold,
+        fontSize: theme.FontSizes.small,
+        marginLeft: 4,
+    },
+    editButton: {
+        backgroundColor: theme.Colors.primary,
+        paddingVertical: theme.Spacing.sm,
+        paddingHorizontal: theme.Spacing.md,
+        borderRadius: theme.BorderRadius.md,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        flex: 1.5,
         shadowColor: theme.Colors.primary,
         shadowOpacity: 0.3,
         shadowRadius: 8,
         shadowOffset: {width: 0, height: 4},
         elevation: 4,
     },
-    buttonIcon: {
-        marginRight: theme.Spacing.sm,
-    },
-    saveButtonText: {
+    editButtonText: {
         color: theme.Colors.white,
         fontWeight: theme.FontWeight.bold,
-        fontSize: theme.FontSizes.medium,
+        fontSize: theme.FontSizes.small,
+        marginLeft: 4,
     },
     modalOverlay: {
         flex: 1,

@@ -1,16 +1,21 @@
+import React, {JSX, useCallback, useEffect, useRef, useState} from 'react';
 import {
-    View,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
+    ActivityIndicator,
+    Alert,
     Animated,
-    SafeAreaView
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    TouchableOpacity,
+    View,
+    StyleSheet,
 } from 'react-native';
-import {useRouter} from 'expo-router';
+import {useFocusEffect, useRouter} from 'expo-router';
+import {MaterialIcons} from '@expo/vector-icons';
 import {AppText} from '@/components/AppText';
 import theme from '@/Themes';
-import {MaterialIcons} from '@expo/vector-icons';
-import React, {JSX, useEffect, useRef} from 'react';
+import type {RefuelLog} from '@/config/Database';
+import {refuels} from '@/config/Database';
 
 interface FuelEntry {
     id: number;
@@ -32,52 +37,111 @@ interface EntryCardProps {
 export default function FuelLogScreen(): JSX.Element {
     const router = useRouter();
 
-    const fuelEntries: FuelEntry[] = [
-        {
-            id: 1,
-            odometer: '13,559',
-            date: '29-05-2025',
-            distance: '106 km',
-            volume: '4 l',
-            cost: '500.00 BDT',
-            rate: '125.0 BDT/l',
-            mileage: '26.5',
-            efficiency: 'excellent'
-        },
-        {
-            id: 2,
-            odometer: '13,453',
-            date: '06-05-2025',
-            distance: '148 km',
-            volume: '4 l',
-            cost: '500.00 BDT',
-            rate: '125.0 BDT/l',
-            mileage: '37.0',
-            efficiency: 'excellent'
-        },
-        {
-            id: 3,
-            odometer: '13,305',
-            date: '18-04-2025',
-            distance: '66 km',
-            volume: '4 l',
-            cost: '500.22 BDT',
-            rate: '126.0 BDT/l',
-            mileage: '16.5',
-            efficiency: 'poor'
-        },
-        {
-            id: 4,
-            odometer: '13,239',
-            date: '09-04-2025',
-            distance: '---',
-            volume: '4 l',
-            cost: '500.22 BDT',
-            rate: '126.0 BDT/l',
-            mileage: '---',
-            efficiency: 'unknown'
-        },
-    ];
+    // State management
+    const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>(1); // You might want to get this from navigation params or context
+
+    // Transform database RefuelLog to FuelEntry format
+    const transformRefuelLogToFuelEntry = (refuelLogs: RefuelLog[]): FuelEntry[] => {
+        return refuelLogs.map((log, index) => {
+            const prevLog = refuelLogs[index + 1]; // Previous entry (older)
+
+            // Calculate distance if we have previous odometer reading
+            let distance = '---';
+            let mileage = '---';
+            let efficiency: FuelEntry['efficiency'] = 'unknown';
+
+            if (prevLog && log.odometer > prevLog.odometer) {
+                const distanceKm = log.odometer - prevLog.odometer;
+                distance = `${distanceKm.toFixed(0)} km`;
+
+                // Calculate mileage (km per liter)
+                const kmPerLiter = distanceKm / log.liters;
+                mileage = kmPerLiter.toFixed(1);
+
+                // Determine efficiency based on mileage
+                if (kmPerLiter >= 25) {
+                    efficiency = 'excellent';
+                } else if (kmPerLiter >= 20) {
+                    efficiency = 'good';
+                } else if (kmPerLiter >= 15) {
+                    efficiency = 'poor';
+                } else {
+                    efficiency = 'poor';
+                }
+            }
+
+            return {
+                id: log.id,
+                odometer: log.odometer.toLocaleString(),
+                date: new Date(log.date).toLocaleDateString('en-GB'), // Format as DD-MM-YYYY
+                distance,
+                volume: `${log.liters.toFixed(1)} l`,
+                cost: `${log.cost.toFixed(2)} BDT`,
+                rate: `${log.pricePerLiter.toFixed(1)} BDT/l`,
+                mileage,
+                efficiency
+            };
+        });
+    };
+
+    // Fetch fuel entries from database
+    const fetchFuelEntries = useCallback(async (showLoading: boolean = true) => {
+        try {
+            if (showLoading) {
+                setLoading(true);
+            }
+            setError(null);
+
+            // Fetch refuel logs for the selected vehicle (or all if no vehicle selected)
+            const refuelLogs = await refuels.findAll(selectedVehicleId);
+
+            // Transform the data
+            const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
+
+            setFuelEntries(transformedEntries);
+        } catch (err) {
+            console.error('Error fetching fuel entries:', err);
+            setError('Failed to load fuel entries');
+            Alert.alert(
+                'Error',
+                'Failed to load fuel entries. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [selectedVehicleId]);
+
+    // Load data when component mounts
+    useEffect(() => {
+        fetchFuelEntries();
+    }, [fetchFuelEntries]);
+
+    // Handle pull-to-refresh
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchFuelEntries(false);
+    }, [fetchFuelEntries]);
+
+    // Handle navigation to add refuel screen
+    const handleAddRefuel = () => {
+        router.push({
+            pathname: '/refuel',
+            params: { vehicleId: selectedVehicleId }
+        });
+    };
+
+    
+    useFocusEffect(
+        useCallback(() => {
+            fetchFuelEntries(false);
+        }, [fetchFuelEntries])
+    );
 
     const getEfficiencyColor = (efficiency: FuelEntry['efficiency']): string => {
         switch(efficiency) {
@@ -101,6 +165,7 @@ export default function FuelLogScreen(): JSX.Element {
 
     const EntryCard: React.FC<EntryCardProps> = ({entry, index}) => {
         const cardAnim = useRef(new Animated.Value(0)).current;
+        const router = useRouter();
 
         useEffect(() => {
             Animated.timing(cardAnim, {
@@ -110,6 +175,14 @@ export default function FuelLogScreen(): JSX.Element {
                 useNativeDriver: true,
             }).start();
         }, []);
+
+        const handleEntryPress = () => {
+            console.log('id:', entry.id)
+            router.push({
+                pathname: '../editFuel',
+                params: { entryId: entry.id }
+            });
+        };
 
         return (
             <Animated.View
@@ -126,7 +199,10 @@ export default function FuelLogScreen(): JSX.Element {
                     }
                 ]}
             >
-                <View style={styles.entryCard}>
+                <TouchableOpacity 
+                    style={styles.entryCard} 
+                    onPress={handleEntryPress}
+                >
                     <View style={styles.headerRow}>
                         <View style={styles.badgeContainer}>
                             <View style={styles.badge}>
@@ -188,10 +264,49 @@ export default function FuelLogScreen(): JSX.Element {
                             </View>
                         </View>
                     </View>
-                </View>
+                </TouchableOpacity>
             </Animated.View>
         );
     };
+
+    // Loading state
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={[styles.container, styles.centerContent]}>
+                    <ActivityIndicator size="large" color={theme.Colors.primary} />
+                    <AppText style={styles.loadingText}>Loading fuel entries...</AppText>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // Empty state
+    if (!loading && fuelEntries.length === 0) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <AppText style={styles.title}>Fuel Log</AppText>
+
+                    <View style={styles.vehicleCard}>
+                        <MaterialIcons name="two-wheeler" size={24} color={theme.Colors.white} style={styles.vehicleIcon}/>
+                        <AppText style={styles.vehicleText}>KPR</AppText>
+                    </View>
+
+                    <View style={[styles.container, styles.centerContent]}>
+                        <MaterialIcons name="local-gas-station" size={64} color={theme.Colors.gray} />
+                        <AppText style={styles.emptyTitle}>No Fuel Entries</AppText>
+                        <AppText style={styles.emptySubtitle}>
+                            Start tracking your fuel consumption by adding your first entry
+                        </AppText>
+                        <TouchableOpacity style={styles.emptyButton} onPress={handleAddRefuel}>
+                            <AppText style={styles.emptyButtonText}>Add First Entry</AppText>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -203,19 +318,29 @@ export default function FuelLogScreen(): JSX.Element {
                     <AppText style={styles.vehicleText}>KPR</AppText>
                 </View>
 
-                <AppText style={styles.detailsTitle}>Recent Entries</AppText>
+                <AppText style={styles.detailsTitle}>
+                    Recent Entries ({fuelEntries.length})
+                </AppText>
 
                 <ScrollView
                     style={styles.entriesContainer}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[theme.Colors.primary]}
+                            tintColor={theme.Colors.primary}
+                        />
+                    }
                 >
                     {fuelEntries.map((entry, index) => (
                         <EntryCard key={entry.id} entry={entry} index={index} />
                     ))}
                 </ScrollView>
 
-                <TouchableOpacity style={styles.fab} onPress={() => router.push('/refuel')}>
+                <TouchableOpacity style={styles.fab} onPress={handleAddRefuel}>
                     <AppText style={styles.fabIcon}>+</AppText>
                 </TouchableOpacity>
             </View>
@@ -403,4 +528,39 @@ const styles = StyleSheet.create({
         fontSize: 32,
         color: theme.Colors.white,
     },
+    centerContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: theme.Colors.gray,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: theme.Colors.textPrimary,
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        color: theme.Colors.gray,
+        marginTop: 8,
+        textAlign: 'center',
+        paddingHorizontal: 32,
+    },
+    emptyButton: {
+        backgroundColor: theme.Colors.primary,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginTop: 24,
+    },
+    emptyButtonText: {
+        color: theme.Colors.white,
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
