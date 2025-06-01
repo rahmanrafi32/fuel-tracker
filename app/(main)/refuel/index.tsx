@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -7,15 +7,19 @@ import {
     StyleSheet,
     ScrollView,
     Switch,
-    Modal, Alert
+    Modal,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    ActivityIndicator,
 } from 'react-native';
-import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
-import {MaterialIcons, Ionicons} from '@expo/vector-icons';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import theme from '@/Themes';
 import { refuels } from '@/config/Database';
 import type { CreateRefuelLogData } from '@/config/Database';
-import {RouteParams} from "expo-router";
 
 interface FuelEntryData {
     fuelDate: Date;
@@ -46,11 +50,11 @@ interface FuelEntryScreenProps {
     onSave?: (data: FuelEntryData) => void;
 }
 
-export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'onBack'>) {
+export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, 'onBack'>) {
     const navigation = useNavigation();
     const route = useRoute<RouteProp<any>>();
     const vehicleId = route.params?.vehicleId;
-    
+
     const [fuelDate, setFuelDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [odometer, setOdometer] = useState<string>('');
@@ -59,13 +63,19 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
     const [notes, setNotes] = useState<string>('');
     const [fullTank, setFullTank] = useState<boolean>(true);
     const [missedLastFuel, setMissedLastFuel] = useState<boolean>(false);
-    
+
     const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('KM');
     const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>('L');
     const [showDistanceDropdown, setShowDistanceDropdown] = useState<boolean>(false);
     const [showVolumeDropdown, setShowVolumeDropdown] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    
+
+    // Alert modal state
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState<'success' | 'error'>('success');
+
     const distanceUnits: DistanceUnit[] = ['KM', 'Miles'];
     const volumeUnits: VolumeUnit[] = ['L', 'Gallon (US)', 'Gallon (UK)'];
 
@@ -75,32 +85,24 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
 
         // Convert volume to liters
         if (volumeUnit === 'Gallon (US)') {
-            liters = liters * 3.78541; 
+            liters = liters * 3.78541;
         } else if (volumeUnit === 'Gallon (UK)') {
-            liters = liters * 4.54609; 
+            liters = liters * 4.54609;
         }
-        
+
         if (distanceUnit === 'Miles') {
-            odometerReading = odometerReading * 1.60934; 
+            odometerReading = odometerReading * 1.60934;
         }
 
         return { liters, odometerReading };
     };
 
-
-
     const handleSave = async (): Promise<void> => {
         try {
             setIsSaving(true);
 
-            // Validate form
-            // const validationError = validateForm();
-            // if (validationError) {
-            //     Alert.alert('Validation Error', validationError);
-            //     return;
-            // }
+            // TODO: Add validation if needed
 
-            // Convert units and prepare data
             const { liters, odometerReading } = convertToStandardUnits();
             const totalCost = liters * Number(fuelUnitPrice);
 
@@ -110,17 +112,15 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
                 odometer: odometerReading,
                 liters: liters,
                 cost: totalCost,
-                fuelType: 'petrol', 
-                // location: location.trim() || undefined,
+                fuelType: 'petrol',
                 notes: notes.trim() || undefined,
-                isFullTank: fullTank
+                isFullTank: fullTank,
             };
 
-            // Save to database
             const refuelId = await refuels.create(refuelData);
 
             console.log('Refuel saved successfully with ID:', refuelId);
-            
+
             if (onSave) {
                 const formData: FuelEntryData = {
                     fuelDate,
@@ -131,32 +131,21 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
                     fullTank,
                     missedLastFuel,
                     distanceUnit,
-                    volumeUnit
+                    volumeUnit,
                 };
                 onSave(formData);
             }
 
-            // Show success message
-            Alert.alert(
-                'Success',
-                'Refuel data saved successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            handleBack();
-                        }
-                    }
-                ]
-            );
-
+            setAlertTitle('Success');
+            setAlertMessage('Refuel data saved successfully!');
+            setAlertType('success');
+            setAlertVisible(true);
         } catch (error) {
             console.error('Error saving refuel data:', error);
-            Alert.alert(
-                'Error',
-                'Failed to save refuel data. Please try again.',
-                [{ text: 'OK' }]
-            );
+            setAlertTitle('Error');
+            setAlertMessage('Failed to save refuel data. Please try again.');
+            setAlertType('error');
+            setAlertVisible(true);
         } finally {
             setIsSaving(false);
         }
@@ -170,7 +159,7 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
         return date.toLocaleDateString('en-GB', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric'
+            year: 'numeric',
         });
     };
 
@@ -187,32 +176,31 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
                                                              selectedValue,
                                                              onSelect,
                                                              onClose,
-                                                             title
+                                                             title,
                                                          }) => (
         <Modal visible={visible} transparent animationType="fade">
-            <TouchableOpacity style={styles.modalOverlay} onPress={onClose}>
+            <TouchableOpacity style={styles.modalOverlay} onPress={onClose} activeOpacity={1}>
                 <View style={styles.dropdownModal}>
                     <Text style={styles.dropdownTitle}>{title}</Text>
                     {options.map((option: string) => (
                         <TouchableOpacity
                             key={option}
-                            style={[
-                                styles.dropdownOption,
-                                selectedValue === option && styles.selectedOption
-                            ]}
+                            style={[styles.dropdownOption, selectedValue === option && styles.selectedOption]}
                             onPress={() => {
                                 onSelect(option);
                                 onClose();
                             }}
                         >
-                            <Text style={[
-                                styles.dropdownOptionText,
-                                selectedValue === option && styles.selectedOptionText
-                            ]}>
+                            <Text
+                                style={[
+                                    styles.dropdownOptionText,
+                                    selectedValue === option && styles.selectedOptionText,
+                                ]}
+                            >
                                 {option}
                             </Text>
                             {selectedValue === option && (
-                                <Ionicons name="checkmark" size={20} color={theme.Colors.primary}/>
+                                <Ionicons name="checkmark" size={20} color={theme.Colors.primary} />
                             )}
                         </TouchableOpacity>
                     ))}
@@ -221,190 +209,278 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
         </Modal>
     );
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.form}>
-                {/* Date Picker */}
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="calendar" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fueling date</Text>
-                        <View style={styles.dateDisplay}>
-                            <Text style={styles.dateValue}>{formatDate(fuelDate)}</Text>
-                            <Ionicons name="chevron-down" size={16} color={theme.Colors.gray}/>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={fuelDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleDateChange}
-                    />
-                )}
-
-                {/* Odometer */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="speed" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Current odometer</Text>
-                        <View style={styles.inputRow}>
-                            <TextInput
-                                placeholder="Enter reading"
-                                style={styles.input}
-                                keyboardType="numeric"
-                                value={odometer}
-                                onChangeText={(text: string) => setOdometer(text)}
-                            />
-                            <TouchableOpacity
-                                style={styles.unitSelector}
-                                onPress={() => setShowDistanceDropdown(true)}
-                            >
-                                <Text style={styles.unitText}>{distanceUnit}</Text>
-                                <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Fuel Volume */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fuel volume</Text>
-                        <View style={styles.inputRow}>
-                            <TextInput
-                                placeholder="Enter volume"
-                                style={styles.input}
-                                keyboardType="numeric"
-                                value={fuelVolume}
-                                onChangeText={(text: string) => setFuelVolume(text)}
-                            />
-                            <TouchableOpacity
-                                style={styles.unitSelector}
-                                onPress={() => setShowVolumeDropdown(true)}
-                            >
-                                <Text style={styles.unitText}>{volumeUnit}</Text>
-                                <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Fuel Unit Price */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="pricetag" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fuel unit price</Text>
-                        <TextInput
-                            placeholder="Price per unit"
-                            style={styles.input}
-                            keyboardType="numeric"
-                            value={fuelUnitPrice}
-                            onChangeText={(text: string) => setFuelUnitPrice(text)}
-                        />
-                    </View>
-                </View>
-
-                {/* Notes */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="document-text" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Notes</Text>
-                        <TextInput
-                            placeholder="Add any notes..."
-                            style={[styles.input, styles.multilineInput]}
-                            value={notes}
-                            onChangeText={(text: string) => setNotes(text)}
-                            multiline
-                            numberOfLines={3}
-                        />
-                    </View>
-                </View>
-
-                {/* Switches */}
-                <View style={styles.switchSection}>
-                    <View style={styles.switchRow}>
-                        <View style={styles.switchContent}>
-                            <Ionicons name="car" size={18} color={theme.Colors.gray} style={styles.switchIcon}/>
-                            <Text style={styles.switchLabel}>Full tank</Text>
-                        </View>
-                        <Switch
-                            value={fullTank}
-                            onValueChange={(value: boolean) => setFullTank(value)}
-                            trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
-                            thumbColor={fullTank ? theme.Colors.white : theme.Colors.background}
-                        />
-                    </View>
-
-                    <View style={styles.switchRow}>
-                        <View style={styles.switchContent}>
-                            <Ionicons name="alert-circle" size={18} color={theme.Colors.gray}
-                                      style={styles.switchIcon}/>
-                            <Text style={styles.switchLabel}>Previous fuelling missed</Text>
-                        </View>
-                        <Switch
-                            value={missedLastFuel}
-                            onValueChange={(value: boolean) => setMissedLastFuel(value)}
-                            trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
-                            thumbColor={missedLastFuel ? theme.Colors.white : theme.Colors.background}
-                        />
-                    </View>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.backButtonSecondary} onPress={handleBack}>
-                        <Ionicons name="arrow-back" size={20} color={theme.Colors.primary} style={styles.buttonIcon}/>
-                        <Text style={styles.backButtonText}>BACK</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                        <Ionicons name="checkmark-circle" size={20} color={theme.Colors.white}
-                                  style={styles.buttonIcon}/>
-                        <Text style={styles.saveButtonText}>SAVE ENTRY</Text>
+    const CustomAlertModal = () => (
+        <Modal visible={alertVisible} transparent animationType="fade">
+            <View style={styles.alertOverlay}>
+                <View
+                    style={[
+                        styles.alertContainer,
+                        alertType === 'success'
+                            ? { borderColor: theme.Colors.costGreen }
+                            : { borderColor: theme.Colors.error },
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.alertTitle,
+                            alertType === 'success'
+                                ? { color: theme.Colors.costGreen }
+                                : { color: theme.Colors.error },
+                        ]}
+                    >
+                        {alertTitle}
+                    </Text>
+                    <Text style={styles.alertMessage}>{alertMessage}</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.alertButton,
+                            alertType === 'success'
+                                ? { backgroundColor: theme.Colors.costGreen }
+                                : { backgroundColor: theme.Colors.error },
+                        ]}
+                        onPress={() => {
+                            setAlertVisible(false);
+                            if (alertType === 'success') {
+                                handleBack();
+                            }
+                        }}
+                    >
+                        <Text style={styles.alertButtonText}>OK</Text>
                     </TouchableOpacity>
                 </View>
             </View>
+        </Modal>
+    );
 
-            {/* Dropdowns */}
-            <DropdownModal
-                visible={showDistanceDropdown}
-                options={distanceUnits}
-                selectedValue={distanceUnit}
-                onSelect={(value: string) => setDistanceUnit(value as DistanceUnit)}
-                onClose={() => setShowDistanceDropdown(false)}
-                title="Select Distance Unit"
-            />
+    return (
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: theme.Colors.background }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ flexGrow: 1, padding: theme.Spacing.lg, backgroundColor: theme.Colors.background }}
+                >
+                    <View style={styles.form}>
+                        {/* Date Picker */}
+                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.fieldRow}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons name="calendar" size={20} color={theme.Colors.primary} />
+                            </View>
+                            <View style={styles.fieldContent}>
+                                <Text style={styles.label}>Fueling date</Text>
+                                <View style={styles.dateDisplay}>
+                                    <Text style={styles.dateValue}>{formatDate(fuelDate)}</Text>
+                                    <Ionicons name="chevron-down" size={16} color={theme.Colors.gray} />
+                                </View>
+                            </View>
+                        </TouchableOpacity>
 
-            <DropdownModal
-                visible={showVolumeDropdown}
-                options={volumeUnits}
-                selectedValue={volumeUnit}
-                onSelect={(value: string) => setVolumeUnit(value as VolumeUnit)}
-                onClose={() => setShowVolumeDropdown(false)}
-                title="Select Volume Unit"
-            />
-        </ScrollView>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={fuelDate}
+                                mode="date"
+                                display="default"
+                                onChange={handleDateChange}
+                            />
+                        )}
+
+                        {/* Odometer */}
+                        <View style={styles.fieldRow}>
+                            <View style={styles.iconContainer}>
+                                <MaterialIcons name="speed" size={20} color={theme.Colors.primary} />
+                            </View>
+                            <View style={styles.fieldContent}>
+                                <Text style={styles.label}>Current odometer</Text>
+                                <View style={styles.inputRow}>
+                                    <TextInput
+                                        placeholder="Enter reading"
+                                        style={styles.input}
+                                        keyboardType="numeric"
+                                        value={odometer}
+                                        onChangeText={(text: string) => setOdometer(text)}
+                                        returnKeyType="done"
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.unitSelector}
+                                        onPress={() => setShowDistanceDropdown(true)}
+                                    >
+                                        <Text style={styles.unitText}>{distanceUnit}</Text>
+                                        <Ionicons name="chevron-down" size={14} color={theme.Colors.white} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Fuel Volume */}
+                        <View style={styles.fieldRow}>
+                            <View style={styles.iconContainer}>
+                                <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary} />
+                            </View>
+                            <View style={styles.fieldContent}>
+                                <Text style={styles.label}>Fuel volume</Text>
+                                <View style={styles.inputRow}>
+                                    <TextInput
+                                        placeholder="Enter volume"
+                                        style={styles.input}
+                                        keyboardType="numeric"
+                                        value={fuelVolume}
+                                        onChangeText={(text: string) => setFuelVolume(text)}
+                                        returnKeyType="done"
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.unitSelector}
+                                        onPress={() => setShowVolumeDropdown(true)}
+                                    >
+                                        <Text style={styles.unitText}>{volumeUnit}</Text>
+                                        <Ionicons name="chevron-down" size={14} color={theme.Colors.white} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Fuel Unit Price */}
+                        <View style={styles.fieldRow}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons name="pricetag" size={20} color={theme.Colors.primary} />
+                            </View>
+                            <View style={styles.fieldContent}>
+                                <Text style={styles.label}>Fuel unit price</Text>
+                                <TextInput
+                                    placeholder="Price per unit"
+                                    style={styles.input}
+                                    keyboardType="numeric"
+                                    value={fuelUnitPrice}
+                                    onChangeText={(text: string) => setFuelUnitPrice(text)}
+                                    returnKeyType="done"
+                                />
+                            </View>
+                        </View>
+
+                        {/* Notes */}
+                        <View style={styles.fieldRow}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons name="document-text" size={20} color={theme.Colors.primary} />
+                            </View>
+                            <View style={styles.fieldContent}>
+                                <Text style={styles.label}>Notes</Text>
+                                <TextInput
+                                    placeholder="Add any notes..."
+                                    style={[styles.input, styles.multilineInput]}
+                                    value={notes}
+                                    onChangeText={(text: string) => setNotes(text)}
+                                    multiline
+                                    numberOfLines={3}
+                                    returnKeyType="done"
+                                />
+                            </View>
+                        </View>
+
+                        {/* Switches */}
+                        <View style={styles.switchSection}>
+                            <View style={styles.switchRow}>
+                                <View style={styles.switchContent}>
+                                    <Ionicons
+                                        name="car"
+                                        size={18}
+                                        color={theme.Colors.gray}
+                                        style={styles.switchIcon}
+                                    />
+                                    <Text style={styles.switchLabel}>Full tank</Text>
+                                </View>
+                                <Switch
+                                    value={fullTank}
+                                    onValueChange={(value: boolean) => setFullTank(value)}
+                                    trackColor={{ false: theme.Colors.gray, true: theme.Colors.primary }}
+                                    thumbColor={fullTank ? theme.Colors.white : theme.Colors.background}
+                                />
+                            </View>
+
+                            <View style={styles.switchRow}>
+                                <View style={styles.switchContent}>
+                                    <Ionicons
+                                        name="alert-circle"
+                                        size={18}
+                                        color={theme.Colors.gray}
+                                        style={styles.switchIcon}
+                                    />
+                                    <Text style={styles.switchLabel}>Previous fuelling missed</Text>
+                                </View>
+                                <Switch
+                                    value={missedLastFuel}
+                                    onValueChange={(value: boolean) => setMissedLastFuel(value)}
+                                    trackColor={{ false: theme.Colors.gray, true: theme.Colors.primary }}
+                                    thumbColor={missedLastFuel ? theme.Colors.white : theme.Colors.background}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Action Buttons */}
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.backButtonSecondary} onPress={handleBack}>
+                                <Ionicons
+                                    name="arrow-back"
+                                    size={20}
+                                    color={theme.Colors.primary}
+                                    style={styles.buttonIcon}
+                                />
+                                <Text style={styles.backButtonText}>BACK</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
+                                <Ionicons
+                                    name="checkmark-circle"
+                                    size={20}
+                                    color={theme.Colors.white}
+                                    style={styles.buttonIcon}
+                                />
+                                <Text style={styles.saveButtonText}>SAVE ENTRY</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Dropdowns */}
+                    <DropdownModal
+                        visible={showDistanceDropdown}
+                        options={distanceUnits}
+                        selectedValue={distanceUnit}
+                        onSelect={(value: string) => setDistanceUnit(value as DistanceUnit)}
+                        onClose={() => setShowDistanceDropdown(false)}
+                        title="Select Distance Unit"
+                    />
+
+                    <DropdownModal
+                        visible={showVolumeDropdown}
+                        options={volumeUnits}
+                        selectedValue={volumeUnit}
+                        onSelect={(value: string) => setVolumeUnit(value as VolumeUnit)}
+                        onClose={() => setShowVolumeDropdown(false)}
+                        title="Select Volume Unit"
+                    />
+                </ScrollView>
+            </TouchableWithoutFeedback>
+
+            {/* Loading overlay */}
+            {isSaving && (
+                <Modal transparent animationType="fade">
+                    <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color={theme.Colors.primary} />
+                    </View>
+                </Modal>
+            )}
+
+            {/* Custom Alert Modal */}
+            <CustomAlertModal />
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: theme.Spacing.lg,
-        paddingBottom: theme.Spacing.xl,
+        flexGrow: 1,
         backgroundColor: theme.Colors.background,
     },
     form: {
@@ -414,30 +490,8 @@ const styles = StyleSheet.create({
         shadowColor: theme.Colors.black,
         shadowOpacity: 0.08,
         shadowRadius: 8,
-        shadowOffset: {width: 0, height: 4},
+        shadowOffset: { width: 0, height: 4 },
         elevation: 4,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: theme.Spacing.lg,
-        paddingBottom: theme.Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    backButton: {
-        padding: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm,
-        backgroundColor: '#fff7ed',
-    },
-    headerTitle: {
-        fontSize: theme.FontSizes.large,
-        fontWeight: theme.FontWeight.bold,
-        color: theme.Colors.textPrimary,
-    },
-    headerSpacer: {
-        width: 40,
     },
     fieldRow: {
         flexDirection: 'row',
@@ -571,7 +625,7 @@ const styles = StyleSheet.create({
         shadowColor: theme.Colors.primary,
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        shadowOffset: {width: 0, height: 4},
+        shadowOffset: { width: 0, height: 4 },
         elevation: 4,
     },
     buttonIcon: {
@@ -598,7 +652,7 @@ const styles = StyleSheet.create({
         shadowColor: theme.Colors.black,
         shadowOpacity: 0.2,
         shadowRadius: 10,
-        shadowOffset: {width: 0, height: 5},
+        shadowOffset: { width: 0, height: 5 },
         elevation: 10,
     },
     dropdownTitle: {
@@ -627,5 +681,58 @@ const styles = StyleSheet.create({
     selectedOptionText: {
         color: theme.Colors.primary,
         fontWeight: theme.FontWeight.medium,
+    },
+    loadingOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
+    },
+    alertOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: theme.Spacing.lg,
+    },
+    alertContainer: {
+        width: '80%',
+        backgroundColor: theme.Colors.cardBackground,
+        borderRadius: theme.BorderRadius.lg,
+        padding: theme.Spacing.lg,
+        borderWidth: 3,
+        shadowColor: theme.Colors.black,
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 10,
+        alignItems: 'center',
+    },
+    alertTitle: {
+        fontSize: theme.FontSizes.xl,
+        fontWeight: theme.FontWeight.bold,
+        marginBottom: theme.Spacing.md,
+    },
+    alertMessage: {
+        fontSize: theme.FontSizes.medium,
+        color: theme.Colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: theme.Spacing.lg,
+    },
+    alertButton: {
+        paddingVertical: theme.Spacing.md,
+        paddingHorizontal: theme.Spacing.xl,
+        borderRadius: theme.BorderRadius.md,
+    },
+    alertButtonText: {
+        color: theme.Colors.white,
+        fontWeight: theme.FontWeight.bold,
+        fontSize: theme.FontSizes.medium,
     },
 });
