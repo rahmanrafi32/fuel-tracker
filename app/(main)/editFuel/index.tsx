@@ -42,8 +42,8 @@ interface DropdownModalProps {
 }
 
 type RouteParams = {
-    editFuel: {  // Changed from 'EditFuelEntry' to match your route name
-        entryId: string | number;  // Made more flexible for different ID types
+    editFuel: { 
+        entryId: string | number;
     };
 };
 
@@ -68,14 +68,11 @@ export default function EditFuelEntryScreen() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
-    // Add error state for debugging
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const distanceUnits: DistanceUnit[] = ['KM', 'Miles'];
     const volumeUnits: VolumeUnit[] = ['L', 'Gallon (US)', 'Gallon (UK)'];
-
-    // Load existing entry data
+    
     useEffect(() => {
         if (entryId) {
             loadEntryData();
@@ -89,8 +86,7 @@ export default function EditFuelEntryScreen() {
         try {
             setIsLoading(true);
             setLoadError(null);
-
-            // Convert entryId to number if it's a string
+            
             const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
             const entry = await refuels.findById(id);
 
@@ -122,14 +118,14 @@ export default function EditFuelEntryScreen() {
 
         // Convert volume to liters
         if (volumeUnit === 'Gallon (US)') {
-            liters = liters * 3.78541; // US gallon to liters
+            liters = liters * 3.78541; 
         } else if (volumeUnit === 'Gallon (UK)') {
-            liters = liters * 4.54609; // UK gallon to liters
+            liters = liters * 4.54609; 
         }
 
         // Convert distance to kilometers (if needed)
         if (distanceUnit === 'Miles') {
-            odometerReading = odometerReading * 1.60934; // Miles to kilometers
+            odometerReading = odometerReading * 1.60934;
         }
 
         return { liters, odometerReading };
@@ -157,8 +153,6 @@ export default function EditFuelEntryScreen() {
             
             await refuels.update(id, updateData);
             
-
-            // Show success message
             Alert.alert(
                 'Success',
                 'Entry updated successfully!',
@@ -290,8 +284,7 @@ export default function EditFuelEntryScreen() {
             </TouchableOpacity>
         </Modal>
     );
-
-    // Enhanced loading state with debug info
+    
     if (isLoading) {
         return (
             <View style={[styles.container, styles.centerContent]}>

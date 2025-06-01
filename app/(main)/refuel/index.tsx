@@ -11,10 +11,11 @@ import {
 } from 'react-native';
 import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
 import {MaterialIcons, Ionicons} from '@expo/vector-icons';
-import {useNavigation} from '@react-navigation/native';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import theme from '@/Themes';
 import { refuels } from '@/config/Database';
 import type { CreateRefuelLogData } from '@/config/Database';
+import {RouteParams} from "expo-router";
 
 interface FuelEntryData {
     fuelDate: Date;
@@ -47,6 +48,9 @@ interface FuelEntryScreenProps {
 
 export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'onBack'>) {
     const navigation = useNavigation();
+    const route = useRoute<RouteProp<any>>();
+    const vehicleId = route.params?.vehicleId;
+    
     const [fuelDate, setFuelDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [odometer, setOdometer] = useState<string>('');
@@ -71,14 +75,13 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
 
         // Convert volume to liters
         if (volumeUnit === 'Gallon (US)') {
-            liters = liters * 3.78541; // US gallon to liters
+            liters = liters * 3.78541; 
         } else if (volumeUnit === 'Gallon (UK)') {
-            liters = liters * 4.54609; // UK gallon to liters
+            liters = liters * 4.54609; 
         }
-
-        // Convert distance to kilometers (if needed)
+        
         if (distanceUnit === 'Miles') {
-            odometerReading = odometerReading * 1.60934; // Miles to kilometers
+            odometerReading = odometerReading * 1.60934; 
         }
 
         return { liters, odometerReading };
@@ -102,8 +105,8 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
             const totalCost = liters * Number(fuelUnitPrice);
 
             const refuelData: CreateRefuelLogData = {
-                vehicleId: 1,
-                date: fuelDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+                vehicleId,
+                date: fuelDate.toISOString().split('T')[0],
                 odometer: odometerReading,
                 liters: liters,
                 cost: totalCost,
@@ -117,8 +120,7 @@ export default function FuelEntryScreen({onSave}: Omit<FuelEntryScreenProps, 'on
             const refuelId = await refuels.create(refuelData);
 
             console.log('Refuel saved successfully with ID:', refuelId);
-
-            // Call the onSave callback if provided
+            
             if (onSave) {
                 const formData: FuelEntryData = {
                     fuelDate,

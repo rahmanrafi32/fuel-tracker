@@ -1,4 +1,4 @@
-import React, {JSX, useCallback, useEffect, useState} from 'react';
+import React, { JSX, useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -8,13 +8,15 @@ import {
     TouchableOpacity,
     View,
     StyleSheet,
+    Modal,
+    Text,
 } from 'react-native';
-import {useFocusEffect, useRouter} from 'expo-router';
-import {MaterialIcons} from '@expo/vector-icons';
-import {AppText} from '@/components/AppText';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { AppText } from '@/components/AppText';
 import theme from '@/Themes';
-import type {RefuelLog} from '@/config/Database';
-import {refuels, vehicles} from '@/config/Database';
+import type { RefuelLog } from '@/config/Database';
+import { refuels, vehicles } from '@/config/Database';
 
 interface FuelEntry {
     id: number;
@@ -45,15 +47,17 @@ interface EntryCardProps {
 
 export default function FuelLogScreen(): JSX.Element {
     const router = useRouter();
-    
+
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>();
     const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([]);
+    const [vehicleDropdownVisible, setVehicleDropdownVisible] = useState<boolean>(false);
+    const [vehicleLoading, setVehicleLoading] = useState<boolean>(false);
 
-    const transformRefuelLogToFuelEntry = (refuelLogs: RefuelLog[]): FuelEntry[] => {
+    const transformRefuelLogToFuelEntry = useCallback((refuelLogs: RefuelLog[]): FuelEntry[] => {
         return refuelLogs.map((log, index) => {
             const prevLog = refuelLogs[index + 1];
 
@@ -86,109 +90,139 @@ export default function FuelLogScreen(): JSX.Element {
                 cost: `${log.cost.toFixed(2)} BDT`,
                 rate: `${log.pricePerLiter.toFixed(1)} BDT/l`,
                 mileage,
-                efficiency
+                efficiency,
             };
         });
-    };
-    const fetchData = useCallback(async (showLoading: boolean = true) => {
+    }, []);
+
+    const fetchVehicles = useCallback(async () => {
         try {
-            if (showLoading) {
-                setLoading(true);
-            }
-            setError(null);
-            
             const vehiclesData = await vehicles.findAll();
             setAvailableVehicles(vehiclesData);
-
             if (vehiclesData.length > 0) {
-                const firstVehicleId = vehiclesData[0].id;
-                setSelectedVehicleId(firstVehicleId);
-                
-                const refuelLogs = await refuels.findAll(firstVehicleId);
-                const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
-                setFuelEntries(transformedEntries);
+                setSelectedVehicleId(vehiclesData[0].id);
             } else {
                 setSelectedVehicleId(undefined);
                 setFuelEntries([]);
             }
         } catch (err) {
-            console.error('Error fetching data:', err);
-            setError('Failed to load data');
-            Alert.alert(
-                'Error',
-                'Failed to load data. Please try again.',
-                [{ text: 'OK' }]
-            );
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
+            console.error('Error fetching vehicles:', err);
+            setError('Failed to load vehicles');
+            Alert.alert('Error', 'Failed to load vehicles. Please try again.', [{ text: 'OK' }]);
         }
     }, []);
+
+    const fetchFuelEntries = useCallback(
+        async (vehicleId: number) => {
+            try {
+                setVehicleLoading(true);
+                const refuelLogs = await refuels.findAll(vehicleId);
+                const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
+                setFuelEntries(transformedEntries);
+            } catch (err) {
+                console.error('Error fetching fuel entries:', err);
+                setError('Failed to load fuel entries');
+                Alert.alert('Error', 'Failed to load fuel entries. Please try again.');
+                setFuelEntries([]);
+            } finally {
+                setVehicleLoading(false);
+            }
+        },
+        [transformRefuelLogToFuelEntry]
+    );
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        await fetchVehicles();
+        setLoading(false);
+    }, [fetchVehicles]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
+    useFocusEffect(
+        useCallback(() => {
+            if (selectedVehicleId !== undefined) {
+                fetchFuelEntries(selectedVehicleId);
+            }
+        }, [selectedVehicleId, fetchFuelEntries])
+    );
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchData(false);
-    }, [fetchData]);
+        if (selectedVehicleId !== undefined) {
+            fetchFuelEntries(selectedVehicleId).then(() => setRefreshing(false));
+        } else {
+            setRefreshing(false);
+        }
+    }, [selectedVehicleId, fetchFuelEntries]);
 
     const handleAddRefuel = () => {
         if (!selectedVehicleId) return;
         router.push({
             pathname: '/refuel',
-            params: { vehicleId: selectedVehicleId }
+            params: { vehicleId: selectedVehicleId.toString() },        
         });
     };
 
     const handleAddVehicle = () => {
+        setVehicleDropdownVisible(false);
         router.push('../addVehicle');
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchData(false);
-        }, [fetchData])
-    );
+    const onSelectVehicle = (vehicleId: number | 'add_vehicle') => {
+        if (vehicleId === 'add_vehicle') {
+            handleAddVehicle();
+        } else {
+            setSelectedVehicleId(vehicleId);
+            setVehicleDropdownVisible(false);
+            fetchFuelEntries(vehicleId);
+        }
+    };
 
     const getEfficiencyColor = (efficiency: FuelEntry['efficiency']): string => {
-        switch(efficiency) {
-            case 'excellent': return '#4CAF50';
-            case 'good': return '#FF9800';
-            case 'poor': return '#F44336';
-            default: return theme.Colors.gray;
+        switch (efficiency) {
+            case 'excellent':
+                return '#4CAF50';
+            case 'good':
+                return '#FF9800';
+            case 'poor':
+                return '#F44336';
+            default:
+                return theme.Colors.gray;
         }
     };
 
     type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
     const getEfficiencyIcon = (efficiency: FuelEntry['efficiency']): MaterialIconName => {
-        switch(efficiency) {
-            case 'excellent': return 'eco';
-            case 'good': return 'warning';
-            case 'poor': return 'error';
-            default: return 'help';
+        switch (efficiency) {
+            case 'excellent':
+                return 'eco';
+            case 'good':
+                return 'warning';
+            case 'poor':
+                return 'error';
+            default:
+                return 'help';
         }
     };
 
-    const EntryCard: React.FC<EntryCardProps> = ({entry}) => {
+    const EntryCard: React.FC<EntryCardProps> = ({ entry }) => {
         const router = useRouter();
 
         const handleEntryPress = () => {
-            console.log('id:', entry.id)
             router.push({
                 pathname: '../editFuel',
-                params: { entryId: entry.id }
+                params: { entryId: entry.id },
             });
         };
 
         return (
             <View style={styles.cardWrapper}>
-                <TouchableOpacity
-                    style={styles.entryCard}
-                    onPress={handleEntryPress}
-                >
+                <TouchableOpacity style={styles.entryCard} onPress={handleEntryPress}>
                     <View style={styles.headerRow}>
                         <View style={styles.badgeContainer}>
                             <View style={styles.badge}>
@@ -219,7 +253,7 @@ export default function FuelLogScreen(): JSX.Element {
 
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
-                            <View style={[styles.statDot, {backgroundColor: theme.Colors.distanceOrange}]} />
+                            <View style={[styles.statDot, { backgroundColor: theme.Colors.distanceOrange }]} />
                             <View style={styles.statContent}>
                                 <AppText style={styles.statLabel}>Distance</AppText>
                                 <AppText style={styles.statValue}>{entry.distance}</AppText>
@@ -227,7 +261,7 @@ export default function FuelLogScreen(): JSX.Element {
                         </View>
 
                         <View style={styles.statItem}>
-                            <View style={[styles.statDot, {backgroundColor: theme.Colors.volumeYellow}]} />
+                            <View style={[styles.statDot, { backgroundColor: theme.Colors.volumeYellow }]} />
                             <View style={styles.statContent}>
                                 <AppText style={styles.statLabel}>Volume</AppText>
                                 <AppText style={styles.statValue}>{entry.volume}</AppText>
@@ -235,7 +269,7 @@ export default function FuelLogScreen(): JSX.Element {
                         </View>
 
                         <View style={styles.statItem}>
-                            <View style={[styles.statDot, {backgroundColor: theme.Colors.costGreen}]} />
+                            <View style={[styles.statDot, { backgroundColor: theme.Colors.costGreen }]} />
                             <View style={styles.statContent}>
                                 <AppText style={styles.statLabel}>Cost</AppText>
                                 <AppText style={styles.statValue}>{entry.cost}</AppText>
@@ -243,7 +277,7 @@ export default function FuelLogScreen(): JSX.Element {
                         </View>
 
                         <View style={styles.statItem}>
-                            <View style={[styles.statDot, {backgroundColor: '#9C27B0'}]} />
+                            <View style={[styles.statDot, { backgroundColor: '#9C27B0' }]} />
                             <View style={styles.statContent}>
                                 <AppText style={styles.statLabel}>Rate</AppText>
                                 <AppText style={styles.statValue}>{entry.rate}</AppText>
@@ -255,6 +289,59 @@ export default function FuelLogScreen(): JSX.Element {
         );
     };
 
+    const VehicleDropdownModal: React.FC<{
+        visible: boolean;
+        vehicles: Vehicle[];
+        selectedVehicleId?: number;
+        onSelect: (id: number | 'add_vehicle') => void;
+        onClose: () => void;
+    }> = ({ visible, vehicles, selectedVehicleId, onSelect, onClose }) => (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+        >
+            <TouchableOpacity style={styles.modalTouchable} onPress={onClose} activeOpacity={1}>
+                <View style={styles.dropdownModal}>
+                    <AppText style={styles.dropdownTitle}>Select Vehicle</AppText>
+                    <ScrollView style={{ maxHeight: 300 }}>
+                        {vehicles.map((vehicle) => (
+                            <TouchableOpacity
+                                key={vehicle.id}
+                                style={[
+                                    styles.dropdownOption,
+                                    selectedVehicleId === vehicle.id && styles.selectedOption,
+                                ]}
+                                onPress={() => onSelect(vehicle.id)}
+                            >
+                                <AppText
+                                    style={[
+                                        styles.dropdownOptionText,
+                                        selectedVehicleId === vehicle.id && styles.selectedOptionText,
+                                    ]}
+                                >
+                                    {vehicle.name}
+                                </AppText>
+                                {selectedVehicleId === vehicle.id && (
+                                    <MaterialIcons name="check" size={20} color={theme.Colors.primary} />
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity
+                            style={[styles.dropdownOption, { borderTopWidth: 1, borderTopColor: '#ddd' }]}
+                            onPress={() => onSelect('add_vehicle')}
+                        >
+                            <AppText style={[styles.dropdownOptionText, { color: theme.Colors.primary }]}>
+                                + Add Vehicle
+                            </AppText>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </TouchableOpacity>
+        </Modal>
+    );
+
     if (loading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -265,7 +352,7 @@ export default function FuelLogScreen(): JSX.Element {
             </SafeAreaView>
         );
     }
-    
+
     if (!loading && availableVehicles.length === 0) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -286,20 +373,40 @@ export default function FuelLogScreen(): JSX.Element {
             </SafeAreaView>
         );
     }
-    
-    if (!loading && fuelEntries.length === 0) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.container}>
-                    <AppText style={styles.title}>Fuel Log</AppText>
 
-                    <View style={styles.vehicleCard}>
-                        <MaterialIcons name="two-wheeler" size={24} color={theme.Colors.white} style={styles.vehicleIcon}/>
-                        <AppText style={styles.vehicleText}>
-                            {availableVehicles.find(v => v.id === selectedVehicleId)?.name || 'Vehicle'}
-                        </AppText>
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <AppText style={styles.title}>Fuel Log</AppText>
+
+                <TouchableOpacity
+                    style={styles.vehicleCard}
+                    onPress={() => setVehicleDropdownVisible(true)}
+                    activeOpacity={0.7}
+                >
+                    <MaterialIcons
+                        name="two-wheeler"
+                        size={24}
+                        color={theme.Colors.white}
+                        style={styles.vehicleIcon}
+                    />
+                    <AppText style={styles.vehicleText}>
+                        {availableVehicles.find((v) => v.id === selectedVehicleId)?.name || 'Vehicle'}
+                    </AppText>
+                    <MaterialIcons
+                        name="arrow-drop-down"
+                        size={24}
+                        color={theme.Colors.white}
+                        style={{ marginLeft: 'auto' }}
+                    />
+                </TouchableOpacity>
+
+                {vehicleLoading ? (
+                    <View style={[styles.container, styles.centerContent]}>
+                        <ActivityIndicator size="large" color={theme.Colors.primary} />
+                        <AppText style={styles.loadingText}>Loading vehicle data...</AppText>
                     </View>
-
+                ) : fuelEntries.length === 0 ? (
                     <View style={[styles.container, styles.centerContent]}>
                         <MaterialIcons name="local-gas-station" size={64} color={theme.Colors.gray} />
                         <AppText style={styles.emptyTitle}>No Fuel Entries</AppText>
@@ -310,48 +417,43 @@ export default function FuelLogScreen(): JSX.Element {
                             <AppText style={styles.emptyButtonText}>Add First Entry</AppText>
                         </TouchableOpacity>
                     </View>
-                </View>
-            </SafeAreaView>
-        );
-    }
+                ) : (
+                    <>
+                        <AppText style={styles.detailsTitle}>Recent Entries ({fuelEntries.length})</AppText>
 
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <AppText style={styles.title}>Fuel Log</AppText>
+                        <ScrollView
+                            style={styles.entriesContainer}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={onRefresh}
+                                    colors={[theme.Colors.primary]}
+                                    tintColor={theme.Colors.primary}
+                                />
+                            }
+                        >
+                            {fuelEntries.map((entry) => (
+                                <EntryCard key={entry.id} entry={entry} />
+                            ))}
+                        </ScrollView>
+                    </>
+                )}
 
-                <View style={styles.vehicleCard}>
-                    <MaterialIcons name="two-wheeler" size={24} color={theme.Colors.white} style={styles.vehicleIcon}/>
-                    <AppText style={styles.vehicleText}>
-                        {availableVehicles.find(v => v.id === selectedVehicleId)?.name || 'Vehicle'}
-                    </AppText>
-                </View>
+                {fuelEntries.length > 0 && (
+                    <TouchableOpacity style={styles.fab} onPress={handleAddRefuel}>
+                        <AppText style={styles.fabIcon}>+</AppText>
+                    </TouchableOpacity>
+                )}
 
-                <AppText style={styles.detailsTitle}>
-                    Recent Entries ({fuelEntries.length})
-                </AppText>
-
-                <ScrollView
-                    style={styles.entriesContainer}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={[theme.Colors.primary]}
-                            tintColor={theme.Colors.primary}
-                        />
-                    }
-                >
-                    {fuelEntries.map((entry) => (
-                        <EntryCard key={entry.id} entry={entry} />
-                    ))}
-                </ScrollView>
-
-                <TouchableOpacity style={styles.fab} onPress={handleAddRefuel}>
-                    <AppText style={styles.fabIcon}>+</AppText>
-                </TouchableOpacity>
+                <VehicleDropdownModal
+                    visible={vehicleDropdownVisible}
+                    vehicles={availableVehicles}
+                    selectedVehicleId={selectedVehicleId}
+                    onSelect={onSelectVehicle}
+                    onClose={() => setVehicleDropdownVisible(false)}
+                />
             </View>
         </SafeAreaView>
     );
@@ -412,7 +514,7 @@ const styles = StyleSheet.create({
         padding: theme.Spacing.lg,
         shadowColor: '#000',
         shadowOpacity: 0.15,
-        shadowOffset: {width: 0, height: 6},
+        shadowOffset: { width: 0, height: 6 },
         shadowRadius: 16,
         elevation: 8,
     },
@@ -529,7 +631,7 @@ const styles = StyleSheet.create({
         elevation: 4,
         shadowColor: '#000',
         shadowOpacity: 0.25,
-        shadowOffset: {width: 0, height: 4},
+        shadowOffset: { width: 0, height: 4 },
         shadowRadius: 8,
     },
     fabIcon: {
@@ -570,5 +672,49 @@ const styles = StyleSheet.create({
         color: theme.Colors.white,
         fontSize: 16,
         fontWeight: 'bold',
-    }
+    },
+    modalTouchable: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    dropdownModal: {
+        backgroundColor: theme.Colors.cardBackground,
+        borderRadius: theme.BorderRadius.lg,
+        padding: theme.Spacing.lg,
+        width: '80%',
+        maxWidth: 300,
+        shadowColor: theme.Colors.black,
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 10,
+    },
+    dropdownTitle: {
+        fontSize: theme.FontSizes.large,
+        fontWeight: theme.FontWeight.bold,
+        color: theme.Colors.textPrimary,
+        marginBottom: theme.Spacing.md,
+        textAlign: 'center',
+    },
+    dropdownOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: theme.Spacing.sm,
+        paddingHorizontal: theme.Spacing.md,
+        borderRadius: theme.BorderRadius.sm,
+        marginBottom: theme.Spacing.xs,
+    },
+    selectedOption: {
+        backgroundColor: '#fff7ed',
+    },
+    dropdownOptionText: {
+        fontSize: theme.FontSizes.medium,
+        color: theme.Colors.textPrimary,
+    },
+    selectedOptionText: {
+        color: theme.Colors.primary,
+        fontWeight: theme.FontWeight.medium,
+    },
 });
