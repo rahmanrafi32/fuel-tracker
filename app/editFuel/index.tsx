@@ -15,7 +15,7 @@ import {MaterialIcons, Ionicons} from '@expo/vector-icons';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import theme from '@/Themes';
 import { refuels } from '@/config/Database';
-import type { RefuelLog, UpdateRefuelLogData } from '@/config/Database';
+import type { UpdateRefuelLogData } from '@/config/Database';
 
 interface FuelEntryData {
     fuelDate: Date;
