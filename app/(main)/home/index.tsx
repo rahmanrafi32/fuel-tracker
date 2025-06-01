@@ -1,4 +1,4 @@
-import React, {JSX, useCallback, useEffect, useRef, useState} from 'react';
+import React, {JSX, useCallback, useEffect, useState} from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -30,25 +30,21 @@ interface FuelEntry {
 
 interface EntryCardProps {
     entry: FuelEntry;
-    index: number;
 }
 
 export default function FuelLogScreen(): JSX.Element {
     const router = useRouter();
-
-    // State management
+    
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>(1); // You might want to get this from navigation params or context
-
-    // Transform database RefuelLog to FuelEntry format
+    const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>(1);
+    
     const transformRefuelLogToFuelEntry = (refuelLogs: RefuelLog[]): FuelEntry[] => {
         return refuelLogs.map((log, index) => {
-            const prevLog = refuelLogs[index + 1]; // Previous entry (older)
+            const prevLog = refuelLogs[index + 1];
 
-            // Calculate distance if we have previous odometer reading
             let distance = '---';
             let mileage = '---';
             let efficiency: FuelEntry['efficiency'] = 'unknown';
@@ -57,17 +53,13 @@ export default function FuelLogScreen(): JSX.Element {
                 const distanceKm = log.odometer - prevLog.odometer;
                 distance = `${distanceKm.toFixed(0)} km`;
 
-                // Calculate mileage (km per liter)
                 const kmPerLiter = distanceKm / log.liters;
                 mileage = kmPerLiter.toFixed(1);
 
-                // Determine efficiency based on mileage
-                if (kmPerLiter >= 25) {
+                if (kmPerLiter >= 35) {
                     efficiency = 'excellent';
-                } else if (kmPerLiter >= 20) {
+                } else if (kmPerLiter >= 25) {
                     efficiency = 'good';
-                } else if (kmPerLiter >= 15) {
-                    efficiency = 'poor';
                 } else {
                     efficiency = 'poor';
                 }
@@ -76,7 +68,7 @@ export default function FuelLogScreen(): JSX.Element {
             return {
                 id: log.id,
                 odometer: log.odometer.toLocaleString(),
-                date: new Date(log.date).toLocaleDateString('en-GB'), // Format as DD-MM-YYYY
+                date: new Date(log.date).toLocaleDateString('en-GB'),
                 distance,
                 volume: `${log.liters.toFixed(1)} l`,
                 cost: `${log.cost.toFixed(2)} BDT`,
@@ -86,8 +78,7 @@ export default function FuelLogScreen(): JSX.Element {
             };
         });
     };
-
-    // Fetch fuel entries from database
+    
     const fetchFuelEntries = useCallback(async (showLoading: boolean = true) => {
         try {
             if (showLoading) {
@@ -95,10 +86,7 @@ export default function FuelLogScreen(): JSX.Element {
             }
             setError(null);
 
-            // Fetch refuel logs for the selected vehicle (or all if no vehicle selected)
             const refuelLogs = await refuels.findAll(selectedVehicleId);
-
-            // Transform the data
             const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
 
             setFuelEntries(transformedEntries);
@@ -116,18 +104,15 @@ export default function FuelLogScreen(): JSX.Element {
         }
     }, [selectedVehicleId]);
 
-    // Load data when component mounts
     useEffect(() => {
         fetchFuelEntries();
     }, [fetchFuelEntries]);
 
-    // Handle pull-to-refresh
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchFuelEntries(false);
     }, [fetchFuelEntries]);
 
-    // Handle navigation to add refuel screen
     const handleAddRefuel = () => {
         router.push({
             pathname: '/refuel',
@@ -135,7 +120,6 @@ export default function FuelLogScreen(): JSX.Element {
         });
     };
 
-    
     useFocusEffect(
         useCallback(() => {
             fetchFuelEntries(false);
@@ -162,18 +146,8 @@ export default function FuelLogScreen(): JSX.Element {
         }
     };
 
-    const EntryCard: React.FC<EntryCardProps> = ({entry, index}) => {
-        const cardAnim = useRef(new Animated.Value(0)).current;
+    const EntryCard: React.FC<EntryCardProps> = ({entry}) => {
         const router = useRouter();
-
-        useEffect(() => {
-            Animated.timing(cardAnim, {
-                toValue: 1,
-                duration: 400,
-                delay: index * 100,
-                useNativeDriver: true,
-            }).start();
-        }, []);
 
         const handleEntryPress = () => {
             console.log('id:', entry.id)
@@ -184,22 +158,9 @@ export default function FuelLogScreen(): JSX.Element {
         };
 
         return (
-            <Animated.View
-                style={[
-                    styles.cardWrapper,
-                    {
-                        opacity: cardAnim,
-                        transform: [{
-                            translateY: cardAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [20, 0],
-                            })
-                        }]
-                    }
-                ]}
-            >
-                <TouchableOpacity 
-                    style={styles.entryCard} 
+            <View style={styles.cardWrapper}>
+                <TouchableOpacity
+                    style={styles.entryCard}
                     onPress={handleEntryPress}
                 >
                     <View style={styles.headerRow}>
@@ -264,11 +225,10 @@ export default function FuelLogScreen(): JSX.Element {
                         </View>
                     </View>
                 </TouchableOpacity>
-            </Animated.View>
+            </View>
         );
     };
 
-    // Loading state
     if (loading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -280,7 +240,6 @@ export default function FuelLogScreen(): JSX.Element {
         );
     }
 
-    // Empty state
     if (!loading && fuelEntries.length === 0) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -334,8 +293,8 @@ export default function FuelLogScreen(): JSX.Element {
                         />
                     }
                 >
-                    {fuelEntries.map((entry, index) => (
-                        <EntryCard key={entry.id} entry={entry} index={index} />
+                    {fuelEntries.map((entry) => (
+                        <EntryCard key={entry.id} entry={entry} />
                     ))}
                 </ScrollView>
 
@@ -390,11 +349,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 80, 
+        paddingBottom: 80,
     },
-   
     cardWrapper: {
-        marginHorizontal: 4, 
+        marginHorizontal: 4,
         marginBottom: theme.Spacing.md,
     },
     entryCard: {
@@ -402,10 +360,10 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: theme.Spacing.lg,
         shadowColor: '#000',
-        shadowOpacity: 0.15, // Increased opacity
-        shadowOffset: {width: 0, height: 6}, // Increased offset
-        shadowRadius: 16, // Increased radius
-        elevation: 8, // Increased elevation for Android
+        shadowOpacity: 0.15,
+        shadowOffset: {width: 0, height: 6},
+        shadowRadius: 16,
+        elevation: 8,
     },
     headerRow: {
         flexDirection: 'row',
