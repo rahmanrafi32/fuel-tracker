@@ -18,7 +18,7 @@ export interface VehicleRefuelSummary {
     totalCost: number;
     refuelCount: number;
     lastRefuelDate: string;
-    averageFuelConsumption?: number; // km per liter
+    averageFuelConsumption?: number;
 }
 
 export interface MonthlyRefuelData {
