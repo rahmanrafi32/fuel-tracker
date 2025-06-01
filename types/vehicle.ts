@@ -31,7 +31,8 @@ export interface UpdateVehicleData {
     tankCapacity?: number;
 }
 
-export type FuelType =
+export type FuelType = 
+    'octane'
     | 'petrol'
     | 'diesel'
     | 'hybrid'
@@ -41,6 +42,7 @@ export type FuelType =
 
 export const FUEL_TYPES: Record<FuelType, string> = {
     petrol: 'Petrol',
+    octane: 'Octane',
     diesel: 'Diesel',
     hybrid: 'Hybrid',
     electric: 'Electric',
