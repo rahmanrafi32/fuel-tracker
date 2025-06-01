@@ -96,17 +96,14 @@ export default function FuelLogScreen(): JSX.Element {
                 setLoading(true);
             }
             setError(null);
-
-            // Fetch vehicles first
+            
             const vehiclesData = await vehicles.findAll();
             setAvailableVehicles(vehiclesData);
 
             if (vehiclesData.length > 0) {
-                // Set the first vehicle as selected by default
                 const firstVehicleId = vehiclesData[0].id;
                 setSelectedVehicleId(firstVehicleId);
-
-                // Then fetch fuel entries for the selected vehicle
+                
                 const refuelLogs = await refuels.findAll(firstVehicleId);
                 const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
                 setFuelEntries(transformedEntries);

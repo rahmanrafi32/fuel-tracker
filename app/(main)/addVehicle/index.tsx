@@ -18,7 +18,7 @@ import {
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import theme from "@/Themes";
-import type { CreateVehicleData } from "@/config/Database/models/vehicle";
+import {createVehicle, CreateVehicleData} from "@/config/Database/models/vehicle";
 import { FUEL_TYPES, FuelType } from "@/types/vehicle";
 
 interface VehicleFormData {
@@ -314,6 +314,9 @@ export default function AddVehicleScreen(): JSX.Element {
             };
 
             console.log("Vehicle data to save:", vehicleData);
+
+            const vehicleId = await createVehicle(vehicleData);
+            console.log("Vehicle saved with ID:", vehicleId);
 
             Alert.alert("Success", "Vehicle added successfully", [
                 { text: "OK", onPress: () => navigation.goBack() },
