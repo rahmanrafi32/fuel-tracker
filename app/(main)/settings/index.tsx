@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -7,29 +7,53 @@ import {
     TouchableOpacity,
     SafeAreaView,
     StatusBar,
+    Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '@/Themes';
+import {useNavigation} from "@react-navigation/native";
+import {useRouter} from "expo-router";
 
 export interface MenuItem {
     id: number;
     title: string;
     icon: React.ComponentProps<typeof Ionicons>['name'];
-    onPress: () => void;
+    onPress?: () => void;
     isPremium?: boolean;
     isLogout?: boolean;
+    hasToggle?: boolean;
+    toggleValue?: boolean;
+    onToggle?: (value: boolean) => void;
 }
 
 export default function ProfileSettingsScreen(){
+    const router = useRouter();
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    const handleDarkModeToggle = (value: boolean) => {
+        setIsDarkMode(value);
+        console.log('Dark mode toggled:', value);
+    };
+
     const menuItems: MenuItem[] = [
         {
             id: 1,
             title: 'Edit vehicles',
             icon: 'car-outline',
-            onPress: () => console.log('Edit vehicles pressed'),
+            onPress: () => router.push({
+                pathname: '../allVehicles',
+            }),
         },
         {
             id: 2,
+            title: 'Dark Mode',
+            icon: 'moon-outline',
+            hasToggle: true,
+            toggleValue: isDarkMode,
+            onToggle: handleDarkModeToggle,
+        },
+        {
+            id: 3,
             title: 'Settings',
             icon: 'settings-outline',
             onPress: () => console.log('Settings pressed'),
@@ -57,10 +81,9 @@ export default function ProfileSettingsScreen(){
         },
         {
             id: 7,
-            title: 'Logout',
-            icon: 'log-out-outline',
-            isLogout: true,
-            onPress: () => console.log('Logout pressed'),
+            title: 'About',
+            icon: 'information-circle-outline',
+            onPress: () => console.log('About pressed'),
         },
     ];
 
@@ -72,8 +95,9 @@ export default function ProfileSettingsScreen(){
                 item.isPremium && styles.premiumItem,
                 item.isLogout && styles.logoutItem,
             ]}
-            onPress={item.onPress}
-            activeOpacity={0.7}
+            onPress={item.hasToggle ? undefined : item.onPress}
+            activeOpacity={item.hasToggle ? 1 : 0.7}
+            disabled={item.hasToggle}
         >
             <View style={styles.menuItemLeft}>
                 <View style={[
@@ -106,11 +130,23 @@ export default function ProfileSettingsScreen(){
                     </View>
                 )}
             </View>
-            <Ionicons
-                name="chevron-forward-outline"
-                size={18}
-                color={theme.Colors.gray}
-            />
+            {item.hasToggle ? (
+                <Switch
+                    value={item.toggleValue}
+                    onValueChange={item.onToggle}
+                    trackColor={{
+                        false: theme.Colors.background,
+                        true: theme.Colors.primary + '40'
+                    }}
+                    thumbColor={item.toggleValue ? theme.Colors.primary : theme.Colors.gray}
+                />
+            ) : (
+                <Ionicons
+                    name="chevron-forward-outline"
+                    size={18}
+                    color={theme.Colors.gray}
+                />
+            )}
         </TouchableOpacity>
     );
 
@@ -121,17 +157,17 @@ export default function ProfileSettingsScreen(){
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Header Section */}
                 <View style={styles.header}>
-                    {/* Avatar */}
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>MR</Text>
+                    {/* App Icon */}
+                    <View style={styles.appIconContainer}>
+                        <View style={styles.appIcon}>
+                            <Ionicons name="car" size={32} color={theme.Colors.white} />
                         </View>
                     </View>
 
-                    {/* User Info */}
-                    <View style={styles.userInfo}>
-                        <Text style={styles.userName}>Minhazur Rahman Rafi</Text>
-                        <Text style={styles.userSubtitle}>Manage your account</Text>
+                    {/* App Info */}
+                    <View style={styles.appInfo}>
+                        <Text style={styles.appName}>Vehicle Manager</Text>
+                        <Text style={styles.appSubtitle}>Manage your settings and preferences</Text>
                     </View>
                 </View>
 
@@ -175,10 +211,10 @@ const styles = StyleSheet.create({
         backgroundColor: theme.Colors.white,
         marginBottom: theme.Spacing.md,
     },
-    avatarContainer: {
+    appIconContainer: {
         marginBottom: theme.Spacing.md,
     },
-    avatar: {
+    appIcon: {
         width: 80,
         height: 80,
         borderRadius: 40,
@@ -191,21 +227,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
     },
-    avatarText: {
-        fontSize: theme.FontSizes.xl,
-        fontWeight: '700',
-        color: theme.Colors.white,
-    },
-    userInfo: {
+    appInfo: {
         alignItems: 'center',
     },
-    userName: {
+    appName: {
         fontSize: theme.FontSizes.large,
         fontWeight: '600',
         color: theme.Colors.textPrimary,
         marginBottom: theme.Spacing.xs,
     },
-    userSubtitle: {
+    appSubtitle: {
         fontSize: theme.FontSizes.medium,
         color: theme.Colors.textSecondary,
     },

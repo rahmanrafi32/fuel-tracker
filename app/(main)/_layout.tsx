@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
 import theme from '@/Themes';
 
 export default function MainLayout() {
@@ -25,20 +25,11 @@ export default function MainLayout() {
                 }}
             />
             <Tabs.Screen
-                name="allVehicles/index"
+                name="settings/index"
                 options={{
-                    title: 'Vehicles',
+                    title: 'Settings',
                     tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="directions-car" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="profile/index"
-                options={{
-                    title: 'Profile',
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="person" size={size} color={color} />
+                        <Feather name="settings" size={size} color={color} />
                     ),
                 }}
             />
