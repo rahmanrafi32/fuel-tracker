@@ -9,7 +9,6 @@ import {
     View,
     StyleSheet,
     Modal,
-    Text,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -95,23 +94,6 @@ export default function FuelLogScreen(): JSX.Element {
         });
     }, []);
 
-    const fetchVehicles = useCallback(async () => {
-        try {
-            const vehiclesData = await vehicles.findAll();
-            setAvailableVehicles(vehiclesData);
-            if (vehiclesData.length > 0) {
-                setSelectedVehicleId(vehiclesData[0].id);
-            } else {
-                setSelectedVehicleId(undefined);
-                setFuelEntries([]);
-            }
-        } catch (err) {
-            console.error('Error fetching vehicles:', err);
-            setError('Failed to load vehicles');
-            Alert.alert('Error', 'Failed to load vehicles. Please try again.', [{ text: 'OK' }]);
-        }
-    }, []);
-
     const fetchFuelEntries = useCallback(
         async (vehicleId: number) => {
             try {
@@ -131,6 +113,35 @@ export default function FuelLogScreen(): JSX.Element {
         [transformRefuelLogToFuelEntry]
     );
 
+    const fetchVehicles = useCallback(async () => {
+        try {
+            setVehicleLoading(true);
+            const vehiclesData = await vehicles.findAll();
+            setAvailableVehicles(vehiclesData);
+
+            if (vehiclesData.length > 0) {
+                const currentVehicleExists = vehiclesData.some(v => v.id === selectedVehicleId);
+
+                if (!selectedVehicleId || !currentVehicleExists) {
+                    const newSelectedId = vehiclesData[vehiclesData.length - 1].id;
+                    setSelectedVehicleId(newSelectedId);
+                    await fetchFuelEntries(newSelectedId);
+                } else if (selectedVehicleId) {
+                    await fetchFuelEntries(selectedVehicleId);
+                }
+            } else {
+                setSelectedVehicleId(undefined);
+                setFuelEntries([]);
+            }
+        } catch (err) {
+            console.error('Error fetching vehicles:', err);
+            setError('Failed to load vehicles');
+            Alert.alert('Error', 'Failed to load vehicles. Please try again.', [{ text: 'OK' }]);
+        } finally {
+            setVehicleLoading(false);
+        }
+    }, [selectedVehicleId, fetchFuelEntries]);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -142,28 +153,24 @@ export default function FuelLogScreen(): JSX.Element {
         fetchData();
     }, [fetchData]);
 
+    // This effect will run every time the screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            if (selectedVehicleId !== undefined) {
-                fetchFuelEntries(selectedVehicleId);
-            }
-        }, [selectedVehicleId, fetchFuelEntries])
+            console.log('FuelLogScreen focused, refreshing vehicles...');
+            fetchVehicles();
+        }, [fetchVehicles])
     );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        if (selectedVehicleId !== undefined) {
-            fetchFuelEntries(selectedVehicleId).then(() => setRefreshing(false));
-        } else {
-            setRefreshing(false);
-        }
-    }, [selectedVehicleId, fetchFuelEntries]);
+        fetchVehicles().then(() => setRefreshing(false));
+    }, [fetchVehicles]);
 
     const handleAddRefuel = () => {
         if (!selectedVehicleId) return;
         router.push({
             pathname: '/refuel',
-            params: { vehicleId: selectedVehicleId.toString() },        
+            params: { vehicleId: selectedVehicleId.toString() },
         });
     };
 
@@ -172,7 +179,7 @@ export default function FuelLogScreen(): JSX.Element {
         router.push('../addVehicle');
     };
 
-    const onSelectVehicle = (vehicleId: number | 'add_vehicle') => {
+    const onSelectVehicle = useCallback((vehicleId: number | 'add_vehicle') => {
         if (vehicleId === 'add_vehicle') {
             handleAddVehicle();
         } else {
@@ -180,7 +187,7 @@ export default function FuelLogScreen(): JSX.Element {
             setVehicleDropdownVisible(false);
             fetchFuelEntries(vehicleId);
         }
-    };
+    }, [fetchFuelEntries]);
 
     const getEfficiencyColor = (efficiency: FuelEntry['efficiency']): string => {
         switch (efficiency) {
