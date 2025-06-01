@@ -10,6 +10,7 @@ const Colors = {
 
     textPrimary: '#000000',
     textSecondary: '#6b7280',
+    textHeader: '#f97316',
 
     distanceOrange: '#ea580c',
     volumeYellow: '#facc15',

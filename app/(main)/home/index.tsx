@@ -14,7 +14,7 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {AppText} from '@/components/AppText';
 import theme from '@/Themes';
 import type {RefuelLog} from '@/config/Database';
-import {refuels} from '@/config/Database';
+import {refuels, vehicles} from '@/config/Database';
 
 interface FuelEntry {
     id: number;
@@ -28,6 +28,17 @@ interface FuelEntry {
     efficiency: 'excellent' | 'good' | 'poor' | 'unknown';
 }
 
+interface Vehicle {
+    id: number;
+    name: string;
+    make: string;
+    model: string;
+    year: number;
+    licensePlate?: string;
+    fuelType: string;
+    tankCapacity?: number;
+}
+
 interface EntryCardProps {
     entry: FuelEntry;
 }
@@ -39,8 +50,9 @@ export default function FuelLogScreen(): JSX.Element {
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>(1);
-    
+    const [selectedVehicleId, setSelectedVehicleId] = useState<number | undefined>();
+    const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([]);
+
     const transformRefuelLogToFuelEntry = (refuelLogs: RefuelLog[]): FuelEntry[] => {
         return refuelLogs.map((log, index) => {
             const prevLog = refuelLogs[index + 1];
@@ -78,52 +90,69 @@ export default function FuelLogScreen(): JSX.Element {
             };
         });
     };
-    
-    const fetchFuelEntries = useCallback(async (showLoading: boolean = true) => {
+    const fetchData = useCallback(async (showLoading: boolean = true) => {
         try {
             if (showLoading) {
                 setLoading(true);
             }
             setError(null);
 
-            const refuelLogs = await refuels.findAll(selectedVehicleId);
-            const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
+            // Fetch vehicles first
+            const vehiclesData = await vehicles.findAll();
+            setAvailableVehicles(vehiclesData);
 
-            setFuelEntries(transformedEntries);
+            if (vehiclesData.length > 0) {
+                // Set the first vehicle as selected by default
+                const firstVehicleId = vehiclesData[0].id;
+                setSelectedVehicleId(firstVehicleId);
+
+                // Then fetch fuel entries for the selected vehicle
+                const refuelLogs = await refuels.findAll(firstVehicleId);
+                const transformedEntries = transformRefuelLogToFuelEntry(refuelLogs);
+                setFuelEntries(transformedEntries);
+            } else {
+                setSelectedVehicleId(undefined);
+                setFuelEntries([]);
+            }
         } catch (err) {
-            console.error('Error fetching fuel entries:', err);
-            setError('Failed to load fuel entries');
+            console.error('Error fetching data:', err);
+            setError('Failed to load data');
             Alert.alert(
                 'Error',
-                'Failed to load fuel entries. Please try again.',
+                'Failed to load data. Please try again.',
                 [{ text: 'OK' }]
             );
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [selectedVehicleId]);
+    }, []);
 
     useEffect(() => {
-        fetchFuelEntries();
-    }, [fetchFuelEntries]);
+        fetchData();
+    }, [fetchData]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchFuelEntries(false);
-    }, [fetchFuelEntries]);
+        fetchData(false);
+    }, [fetchData]);
 
     const handleAddRefuel = () => {
+        if (!selectedVehicleId) return;
         router.push({
             pathname: '/refuel',
             params: { vehicleId: selectedVehicleId }
         });
     };
 
+    const handleAddVehicle = () => {
+        router.push('../addVehicle');
+    };
+
     useFocusEffect(
         useCallback(() => {
-            fetchFuelEntries(false);
-        }, [fetchFuelEntries])
+            fetchData(false);
+        }, [fetchData])
     );
 
     const getEfficiencyColor = (efficiency: FuelEntry['efficiency']): string => {
@@ -234,12 +263,33 @@ export default function FuelLogScreen(): JSX.Element {
             <SafeAreaView style={styles.safeArea}>
                 <View style={[styles.container, styles.centerContent]}>
                     <ActivityIndicator size="large" color={theme.Colors.primary} />
-                    <AppText style={styles.loadingText}>Loading fuel entries...</AppText>
+                    <AppText style={styles.loadingText}>Loading data...</AppText>
                 </View>
             </SafeAreaView>
         );
     }
+    
+    if (!loading && availableVehicles.length === 0) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <AppText style={styles.title}>Fuel Log</AppText>
 
+                    <View style={[styles.container, styles.centerContent]}>
+                        <MaterialIcons name="directions-car" size={64} color={theme.Colors.gray} />
+                        <AppText style={styles.emptyTitle}>No Vehicles Available</AppText>
+                        <AppText style={styles.emptySubtitle}>
+                            Add a vehicle to start tracking fuel consumption
+                        </AppText>
+                        <TouchableOpacity style={styles.emptyButton} onPress={handleAddVehicle}>
+                            <AppText style={styles.emptyButtonText}>Add Vehicle</AppText>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </SafeAreaView>
+        );
+    }
+    
     if (!loading && fuelEntries.length === 0) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -248,7 +298,9 @@ export default function FuelLogScreen(): JSX.Element {
 
                     <View style={styles.vehicleCard}>
                         <MaterialIcons name="two-wheeler" size={24} color={theme.Colors.white} style={styles.vehicleIcon}/>
-                        <AppText style={styles.vehicleText}>KPR</AppText>
+                        <AppText style={styles.vehicleText}>
+                            {availableVehicles.find(v => v.id === selectedVehicleId)?.name || 'Vehicle'}
+                        </AppText>
                     </View>
 
                     <View style={[styles.container, styles.centerContent]}>
@@ -273,7 +325,9 @@ export default function FuelLogScreen(): JSX.Element {
 
                 <View style={styles.vehicleCard}>
                     <MaterialIcons name="two-wheeler" size={24} color={theme.Colors.white} style={styles.vehicleIcon}/>
-                    <AppText style={styles.vehicleText}>KPR</AppText>
+                    <AppText style={styles.vehicleText}>
+                        {availableVehicles.find(v => v.id === selectedVehicleId)?.name || 'Vehicle'}
+                    </AppText>
                 </View>
 
                 <AppText style={styles.detailsTitle}>

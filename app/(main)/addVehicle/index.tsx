@@ -231,12 +231,8 @@ export default function AddVehicleScreen(): JSX.Element {
         },
         [],
     );
-
-    // Improved scroll to input function
     const scrollToInput = useCallback((ref: React.RefObject<TextInput | null>) => {
         if (!ref.current || !scrollViewRef.current) return;
-
-        // Delay to ensure keyboard animation and layout changes are complete
         const delay = Platform.OS === 'ios' ? 300 : 150;
 
         setTimeout(() => {
@@ -244,18 +240,11 @@ export default function AddVehicleScreen(): JSX.Element {
                 ref.current.measureInWindow((x, y, width, height) => {
                     if (scrollViewRef.current) {
                         const screenHeight = Dimensions.get('window').height;
-                        const headerHeight = 120; // Approximate header height
-                        const effectiveKeyboardHeight = keyboardHeight || 280; // Fallback keyboard height
-                        const inputHeight = height + 40; // Input field height + label
-                        const safetyPadding = 50; // Extra padding for safety
-
-                        // Calculate available space above keyboard
+                        const headerHeight = 120;
+                        const effectiveKeyboardHeight = keyboardHeight || 280;
+                        const safetyPadding = 40;
                         const availableHeight = screenHeight - headerHeight - effectiveKeyboardHeight - safetyPadding;
-
-                        // Target position for the input (middle of available space)
                         const targetPosition = headerHeight + (availableHeight * 0.5);
-
-                        // Calculate scroll offset needed
                         const scrollOffset = Math.max(0, y - targetPosition);
 
                         scrollViewRef.current.scrollTo({
@@ -267,8 +256,7 @@ export default function AddVehicleScreen(): JSX.Element {
             }
         }, delay);
     }, [keyboardHeight]);
-
-    // Navigation functions for each field
+    
     const focusNextField = useCallback((nextRef: React.RefObject<TextInput | null>) => {
         setTimeout(() => {
             nextRef.current?.focus();
@@ -350,7 +338,7 @@ export default function AddVehicleScreen(): JSX.Element {
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="arrow-back" size={24} color={theme.Colors.textPrimary} />
+                    <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Add New Vehicle</Text>
@@ -551,7 +539,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.Colors.white,
         borderBottomWidth: 1,
         borderBottomColor: "#f1f5f9",
-        // Ensure header stays on top
         zIndex: 1000,
         elevation: 5,
         shadowColor: "#000",
@@ -562,8 +549,7 @@ const styles = StyleSheet.create({
     backButton: {
         padding: theme.Spacing.sm,
         marginRight: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm,
-        backgroundColor: theme.Colors.background,
+        borderRadius: theme.BorderRadius.sm
     },
     headerContent: {
         flex: 1,
@@ -571,7 +557,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: theme.FontSizes.xl,
         fontWeight: theme.FontWeight.bold,
-        color: theme.Colors.textPrimary,
+        color: theme.Colors.textHeader,
         marginBottom: 2,
     },
     headerSubtitle: {
@@ -659,8 +645,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         paddingHorizontal: theme.Spacing.md,
         paddingTop: theme.Spacing.xl,
-        paddingBottom: theme.Spacing.xl, // Increased bottom padding
-        marginTop: theme.Spacing.lg, // Add margin top for separation
+        paddingBottom: theme.Spacing.xl,
+        marginTop: theme.Spacing.lg,
         gap: theme.Spacing.sm,
     },
     cancelButton: {
