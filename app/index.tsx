@@ -1,9 +1,10 @@
-import {Redirect} from 'expo-router';
-import {useEffect, useState} from "react";
-import {initializeDatabase} from "@/config/Database";
-import {StatusBar} from "expo-status-bar";
-import {View} from "react-native";
-import {AppText} from "@/components/AppText";
+import { Redirect } from 'expo-router';
+import { useEffect, useState } from "react";
+import { initializeDatabase } from "@/config/Database";
+import { StatusBar } from "expo-status-bar";
+import { View, ActivityIndicator } from "react-native";
+import { AppText } from "@/components/AppText";
+import theme from '@/Themes';
 
 export default function Index() {
     const [isDbReady, setIsDbReady] = useState(false);
@@ -26,18 +27,15 @@ export default function Index() {
     
     if (!isDbReady) {
         return (
-            <View>
-                <AppText>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={theme.Colors.primary} />
+                <AppText style={{ marginTop: 16 }}>
                     {dbError ? `Database Error: ${dbError}` : 'Initializing Database...'}
                 </AppText>
                 <StatusBar style="auto"/>
             </View>
         );
     }
-    let user = true;
-    if (user) {
-        return <Redirect href="/(main)/home"/>;
-    } else {
-        return <Redirect href="/(auth)/Login"/>;
-    }
+
+    return <Redirect href="/(main)/home" />;
 }
