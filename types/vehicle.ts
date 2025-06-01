@@ -6,6 +6,7 @@ export interface Vehicle {
     year: number;
     licensePlate?: string;
     fuelType: FuelType;
+    type?:string;
     tankCapacity?: number;
     createdAt: string;
     updatedAt: string;

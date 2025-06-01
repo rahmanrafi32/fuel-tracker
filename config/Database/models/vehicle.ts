@@ -1,4 +1,5 @@
 import { db } from '../connection';
+import {FuelType} from "@/types/vehicle";
 
 export interface Vehicle {
     id: number;
@@ -7,7 +8,7 @@ export interface Vehicle {
     model: string;
     year: number;
     licensePlate?: string;
-    fuelType: string;
+    fuelType: FuelType;
     tankCapacity?: number;
     createdAt: string;
     updatedAt: string;
@@ -19,7 +20,7 @@ export interface CreateVehicleData {
     model: string;
     year: number;
     licensePlate?: string;
-    fuelType: string;
+    fuelType: FuelType;
     tankCapacity?: number;
 }
 
@@ -29,7 +30,7 @@ export interface UpdateVehicleData {
     model?: string;
     year?: number;
     licensePlate?: string;
-    fuelType?: string;
+    fuelType?: FuelType;
     tankCapacity?: number;
 }
 
