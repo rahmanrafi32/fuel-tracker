@@ -66,7 +66,6 @@ const InputField = React.forwardRef<TextInput, InputFieldProps>(
             icon,
             returnKeyType = "next",
             onSubmitEditing,
-            blurOnSubmit,
             onFocus,
         },
         ref: ForwardedRef<TextInput>
@@ -115,7 +114,6 @@ const InputField = React.forwardRef<TextInput, InputFieldProps>(
                         autoCapitalize={keyboardType === "default" ? "words" : "none"}
                         returnKeyType={returnKeyType}
                         onSubmitEditing={onSubmitEditing}
-                        blurOnSubmit={blurOnSubmit}
                     />
                 </View>
             </View>
@@ -202,8 +200,7 @@ export default function AddVehicleScreen(): JSX.Element {
     const yearRef = useRef<TextInput>(null);
     const licensePlateRef = useRef<TextInput>(null);
     const tankCapacityRef = useRef<TextInput>(null);
-
-    // Enhanced keyboard listeners
+    
     useEffect(() => {
         const keyboardWillShowListener = Keyboard.addListener(
             Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -449,7 +446,6 @@ export default function AddVehicleScreen(): JSX.Element {
                             returnKeyType="done"
                             blurOnSubmit={true}
                             onFocus={() => {
-                                // Special handling for last field - extra scroll
                                 setTimeout(() => scrollToInput(tankCapacityRef), 100);
                             }}
                             onSubmitEditing={() => Keyboard.dismiss()}
@@ -505,9 +501,6 @@ export default function AddVehicleScreen(): JSX.Element {
                             <Text style={styles.saveButtonText}>
                                 {isSubmitting ? "Saving..." : "Add Vehicle"}
                             </Text>
-                            {!isSubmitting && (
-                                <MaterialIcons name="add" size={20} color={theme.Colors.white} />
-                            )}
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
@@ -644,8 +637,8 @@ const styles = StyleSheet.create({
     actionContainer: {
         flexDirection: "row",
         paddingHorizontal: theme.Spacing.md,
-        paddingTop: theme.Spacing.xl,
-        paddingBottom: theme.Spacing.xl,
+        paddingTop: theme.Spacing.sm,
+        paddingBottom: theme.Spacing.sm,
         marginTop: theme.Spacing.lg,
         gap: theme.Spacing.sm,
     },
