@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native'; // Add this import
 import {useTheme} from "@/context/ThemeContext";
 import { AppText } from '@/components/AppText';
 import { vehicles } from '@/config/Database';
@@ -21,12 +22,9 @@ export default function VehiclesScreen() {
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
 
-    useEffect(() => {
-        loadVehicles();
-    }, []);
-
     const loadVehicles = async () => {
         try {
+            setLoading(true); // Show loading when refreshing
             const vehicleData = await vehicles.findAll();
             setVehicles(vehicleData);
         } catch (error) {
@@ -36,9 +34,19 @@ export default function VehiclesScreen() {
         }
     };
 
-    // const handleVehiclePress = (vehicleId: number) => {
-    //     router.push(`/vehicleDetails/${vehicleId}`);
-    // };
+    // Replace useEffect with useFocusEffect
+    useFocusEffect(
+        React.useCallback(() => {
+            loadVehicles();
+        }, [])
+    );
+
+    const handleVehiclePress = (vehicleId: number) => {
+        router.push({
+            pathname: '/editVehicle',
+            params: { id: vehicleId.toString() },
+        });
+    };
 
     const handleAddVehicle = () => {
         router.push('../addVehicle');
@@ -108,7 +116,7 @@ export default function VehiclesScreen() {
                             <TouchableOpacity
                                 key={vehicle.id}
                                 style={[styles(theme).vehicleCard, { borderLeftColor: getVehicleColor(index, theme) }]}
-                                // onPress={() => handleVehiclePress(vehicle.id)}
+                                onPress={() => handleVehiclePress(vehicle.id)}
                                 activeOpacity={0.8}
                             >
                                 <View style={[styles(theme).iconCircle, { backgroundColor: getVehicleColor(index, theme) }]}>
@@ -257,4 +265,4 @@ const styles = (theme: any) => StyleSheet.create({
         fontSize: 32,
         color: theme.Colors.white,
     },
-});
+})
