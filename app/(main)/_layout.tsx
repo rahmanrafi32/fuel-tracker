@@ -3,7 +3,7 @@ import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function MainLayout() {
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
 
     return (
         <Tabs
@@ -13,7 +13,14 @@ export default function MainLayout() {
                 tabBarInactiveTintColor: theme.Colors.gray,
                 tabBarStyle: {
                     backgroundColor: theme.Colors.background,
-                    borderTopColor: isDark ? '#333' : '#ddd',
+                    borderTopWidth: 0, 
+                    height: 70,
+                    paddingBottom: 10,
+                    paddingTop: 10,
+                },
+                tabBarLabelStyle: {
+                    fontSize: 14,
+                    fontWeight: '600',
                 },
             }}
         >
@@ -21,8 +28,8 @@ export default function MainLayout() {
                 name="home/index"
                 options={{
                     title: 'Fuel Log',
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="local-gas-station" size={size} color={color} />
+                    tabBarIcon: ({ color }) => (
+                        <MaterialIcons name="local-gas-station" size={28} color={color} />
                     ),
                 }}
             />
@@ -30,8 +37,8 @@ export default function MainLayout() {
                 name="settings/index"
                 options={{
                     title: 'Settings',
-                    tabBarIcon: ({ color, size }) => (
-                        <Feather name="settings" size={size} color={color} />
+                    tabBarIcon: ({ color }) => (
+                        <Feather name="settings" size={28} color={color} />
                     ),
                 }}
             />

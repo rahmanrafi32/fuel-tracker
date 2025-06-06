@@ -157,7 +157,6 @@ export default function FuelLogScreen(): JSX.Element {
     // This effect will run every time the screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            console.log('FuelLogScreen focused, refreshing vehicles...');
             fetchVehicles();
         }, [fetchVehicles])
     );
