@@ -181,12 +181,12 @@ export default function ProfileSettingsScreen() {
                 </View>
 
                 {/* Support & Info Section */}
-                <View style={styles(theme).section}>
-                    <Text style={styles(theme).sectionTitle}>Support & Information</Text>
-                    <View style={styles(theme).menuContainer}>
-                        {bottomMenuItems.map(renderMenuItem)}
-                    </View>
-                </View>
+                {/*<View style={styles(theme).section}>*/}
+                {/*    <Text style={styles(theme).sectionTitle}>Support & Information</Text>*/}
+                {/*    <View style={styles(theme).menuContainer}>*/}
+                {/*        {bottomMenuItems.map(renderMenuItem)}*/}
+                {/*    </View>*/}
+                {/*</View>*/}
 
                 {/* Version Info */}
                 <View style={styles(theme).versionContainer}>
