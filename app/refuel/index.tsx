@@ -17,9 +17,9 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import theme from '@/Themes';
 import { refuels } from '@/config/Database';
 import type { CreateRefuelLogData } from '@/config/Database';
+import {useTheme} from "@/context/ThemeContext";
 
 interface FuelEntryData {
     fuelDate: Date;
@@ -51,6 +51,7 @@ interface FuelEntryScreenProps {
 }
 
 export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, 'onBack'>) {
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const route = useRoute<RouteProp<any>>();
     const vehicleId = route.params?.vehicleId;
@@ -178,13 +179,13 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                                                              title,
                                                          }) => (
         <Modal visible={visible} transparent animationType="fade">
-            <TouchableOpacity style={styles.modalOverlay} onPress={onClose} activeOpacity={1}>
-                <View style={styles.dropdownModal}>
-                    <Text style={styles.dropdownTitle}>{title}</Text>
+            <TouchableOpacity style={styles(theme).modalOverlay} onPress={onClose} activeOpacity={1}>
+                <View style={styles(theme).dropdownModal}>
+                    <Text style={styles(theme).dropdownTitle}>{title}</Text>
                     {options.map((option: string) => (
                         <TouchableOpacity
                             key={option}
-                            style={[styles.dropdownOption, selectedValue === option && styles.selectedOption]}
+                            style={[styles(theme).dropdownOption, selectedValue === option && styles(theme).selectedOption]}
                             onPress={() => {
                                 onSelect(option);
                                 onClose();
@@ -192,8 +193,8 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                         >
                             <Text
                                 style={[
-                                    styles.dropdownOptionText,
-                                    selectedValue === option && styles.selectedOptionText,
+                                    styles(theme).dropdownOptionText,
+                                    selectedValue === option && styles(theme).selectedOptionText,
                                 ]}
                             >
                                 {option}
@@ -210,10 +211,10 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
 
     const CustomAlertModal = () => (
         <Modal visible={alertVisible} transparent animationType="fade">
-            <View style={styles.alertOverlay}>
+            <View style={styles(theme).alertOverlay}>
                 <View
                     style={[
-                        styles.alertContainer,
+                        styles(theme).alertContainer,
                         alertType === 'success'
                             ? { borderColor: theme.Colors.costGreen }
                             : { borderColor: theme.Colors.error },
@@ -221,7 +222,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                 >
                     <Text
                         style={[
-                            styles.alertTitle,
+                            styles(theme).alertTitle,
                             alertType === 'success'
                                 ? { color: theme.Colors.costGreen }
                                 : { color: theme.Colors.error },
@@ -229,10 +230,10 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     >
                         {alertTitle}
                     </Text>
-                    <Text style={styles.alertMessage}>{alertMessage}</Text>
+                    <Text style={styles(theme).alertMessage}>{alertMessage}</Text>
                     <TouchableOpacity
                         style={[
-                            styles.alertButton,
+                            styles(theme).alertButton,
                             alertType === 'success'
                                 ? { backgroundColor: theme.Colors.costGreen }
                                 : { backgroundColor: theme.Colors.error },
@@ -244,7 +245,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                             }
                         }}
                     >
-                        <Text style={styles.alertButtonText}>OK</Text>
+                        <Text style={styles(theme).alertButtonText}>OK</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -258,29 +259,29 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             keyboardVerticalOffset={0}
         >
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack} style={styles.headerBackButton}>
+            <View style={styles(theme).header}>
+                <TouchableOpacity onPress={handleBack} style={styles(theme).headerBackButton}>
                     <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Add Fuel</Text>
-                <View style={styles.headerPlaceholder} />
+                <Text style={styles(theme).headerTitle}>Add Fuel</Text>
+                <View style={styles(theme).headerPlaceholder} />
             </View>
 
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.container}
+                    contentContainerStyle={styles(theme).container}
                 >
                     {/* Date Picker */}
-                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.fieldRow}>
-                        <View style={styles.iconContainer}>
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
                             <Ionicons name="calendar" size={20} color={theme.Colors.primary} />
                         </View>
-                        <View style={styles.fieldContent}>
-                            <Text style={styles.label}>Fueling date</Text>
-                            <View style={styles.dateDisplay}>
-                                <Text style={styles.dateValue}>{formatDate(fuelDate)}</Text>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fueling date</Text>
+                            <View style={styles(theme).dateDisplay}>
+                                <Text style={styles(theme).dateValue}>{formatDate(fuelDate)}</Text>
                                 <Ionicons name="chevron-down" size={16} color={theme.Colors.gray} />
                             </View>
                         </View>
@@ -296,26 +297,27 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     )}
 
                     {/* Odometer */}
-                    <View style={styles.fieldRow}>
-                        <View style={styles.iconContainer}>
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
                             <MaterialIcons name="speed" size={20} color={theme.Colors.primary} />
                         </View>
-                        <View style={styles.fieldContent}>
-                            <Text style={styles.label}>Current odometer</Text>
-                            <View style={styles.inputRow}>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Current odometer</Text>
+                            <View style={styles(theme).inputRow}>
                                 <TextInput
                                     placeholder="Enter reading"
-                                    style={styles.input}
+                                    placeholderTextColor={theme.Colors.textSecondary}
+                                    style={styles(theme).input}
                                     keyboardType="numeric"
                                     value={odometer}
                                     onChangeText={(text: string) => setOdometer(text)}
                                     returnKeyType="done"
                                 />
                                 <TouchableOpacity
-                                    style={styles.unitSelector}
+                                    style={styles(theme).unitSelector}
                                     onPress={() => setShowDistanceDropdown(true)}
                                 >
-                                    <Text style={styles.unitText}>{distanceUnit}</Text>
+                                    <Text style={styles(theme).unitText}>{distanceUnit}</Text>
                                     <Ionicons name="chevron-down" size={14} color={theme.Colors.white} />
                                 </TouchableOpacity>
                             </View>
@@ -323,26 +325,27 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Fuel Volume */}
-                    <View style={styles.fieldRow}>
-                        <View style={styles.iconContainer}>
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
                             <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary} />
                         </View>
-                        <View style={styles.fieldContent}>
-                            <Text style={styles.label}>Fuel volume</Text>
-                            <View style={styles.inputRow}>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fuel volume</Text>
+                            <View style={styles(theme).inputRow}>
                                 <TextInput
                                     placeholder="Enter volume"
-                                    style={styles.input}
+                                    placeholderTextColor={theme.Colors.textSecondary}
+                                    style={styles(theme).input}
                                     keyboardType="numeric"
                                     value={fuelVolume}
                                     onChangeText={(text: string) => setFuelVolume(text)}
                                     returnKeyType="done"
                                 />
                                 <TouchableOpacity
-                                    style={styles.unitSelector}
+                                    style={styles(theme).unitSelector}
                                     onPress={() => setShowVolumeDropdown(true)}
                                 >
-                                    <Text style={styles.unitText}>{volumeUnit}</Text>
+                                    <Text style={styles(theme).unitText}>{volumeUnit}</Text>
                                     <Ionicons name="chevron-down" size={14} color={theme.Colors.white} />
                                 </TouchableOpacity>
                             </View>
@@ -350,15 +353,16 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Fuel Unit Price */}
-                    <View style={styles.fieldRow}>
-                        <View style={styles.iconContainer}>
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
                             <Ionicons name="pricetag" size={20} color={theme.Colors.primary} />
                         </View>
-                        <View style={styles.fieldContent}>
-                            <Text style={styles.label}>Fuel unit price</Text>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fuel unit price</Text>
                             <TextInput
                                 placeholder="Price per unit"
-                                style={styles.input}
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={styles(theme).input}
                                 keyboardType="numeric"
                                 value={fuelUnitPrice}
                                 onChangeText={(text: string) => setFuelUnitPrice(text)}
@@ -368,15 +372,16 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Notes */}
-                    <View style={styles.fieldRow}>
-                        <View style={styles.iconContainer}>
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
                             <Ionicons name="document-text" size={20} color={theme.Colors.primary} />
                         </View>
-                        <View style={styles.fieldContent}>
-                            <Text style={styles.label}>Notes</Text>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Notes</Text>
                             <TextInput
                                 placeholder="Add any notes..."
-                                style={[styles.input, styles.multilineInput]}
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={[styles(theme).input, styles(theme).multilineInput]}
                                 value={notes}
                                 onChangeText={(text: string) => setNotes(text)}
                                 multiline
@@ -387,16 +392,16 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Switches */}
-                    <View style={styles.switchSection}>
-                        <View style={styles.switchRow}>
-                            <View style={styles.switchContent}>
+                    <View style={styles(theme).switchSection}>
+                        <View style={styles(theme).switchRow}>
+                            <View style={styles(theme).switchContent}>
                                 <Ionicons
                                     name="car"
                                     size={18}
                                     color={theme.Colors.gray}
-                                    style={styles.switchIcon}
+                                    style={styles(theme).switchIcon}
                                 />
-                                <Text style={styles.switchLabel}>Full tank</Text>
+                                <Text style={styles(theme).switchLabel}>Full tank</Text>
                             </View>
                             <Switch
                                 value={fullTank}
@@ -406,15 +411,15 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                             />
                         </View>
 
-                        <View style={styles.switchRow}>
-                            <View style={styles.switchContent}>
+                        <View style={styles(theme).switchRow}>
+                            <View style={styles(theme).switchContent}>
                                 <Ionicons
                                     name="alert-circle"
                                     size={18}
                                     color={theme.Colors.gray}
-                                    style={styles.switchIcon}
+                                    style={styles(theme).switchIcon}
                                 />
-                                <Text style={styles.switchLabel}>Previous fuelling missed</Text>
+                                <Text style={styles(theme).switchLabel}>Previous fuelling missed</Text>
                             </View>
                             <Switch
                                 value={missedLastFuel}
@@ -426,15 +431,15 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Save Button */}
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
+                    <View style={styles(theme).buttonContainer}>
+                        <TouchableOpacity style={styles(theme).saveButton} onPress={handleSave} disabled={isSaving}>
                             <Ionicons
                                 name="checkmark-circle"
                                 size={20}
                                 color={theme.Colors.white}
-                                style={styles.buttonIcon}
+                                style={styles(theme).buttonIcon}
                             />
-                            <Text style={styles.saveButtonText}>SAVE ENTRY</Text>
+                            <Text style={styles(theme).saveButtonText}>SAVE ENTRY</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -462,7 +467,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             {/* Loading overlay */}
             {isSaving && (
                 <Modal transparent animationType="fade">
-                    <View style={styles.loadingOverlay}>
+                    <View style={styles(theme).loadingOverlay}>
                         <ActivityIndicator size="large" color={theme.Colors.primary} />
                     </View>
                 </Modal>
@@ -474,7 +479,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
     );
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: theme.Spacing.lg,

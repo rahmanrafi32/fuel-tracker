@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text, TextProps, TouchableOpacity, TouchableOpacityProps, StyleSheet} from 'react-native';
-import theme from '../Themes';
+import {useTheme} from "@/context/ThemeContext";
 
 export const AppButton = ({
                               title,
@@ -8,14 +8,15 @@ export const AppButton = ({
                               textStyle,
                               ...props
                           }: TouchableOpacityProps & { title: string; textStyle?: TextProps['style'] }) => {
+    const { theme } = useTheme();
     return (
-        <TouchableOpacity style={[styles.button, style]} {...props}>
-            <Text style={[styles.buttonText, textStyle]}>{title}</Text>
+        <TouchableOpacity style={[styles(theme).button, style]} {...props}>
+            <Text style={[styles(theme).buttonText, textStyle]}>{title}</Text>
         </TouchableOpacity>
     );
 };
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     text: {
         fontSize: theme.FontSizes.medium,
         color: theme.Colors.textPrimary,

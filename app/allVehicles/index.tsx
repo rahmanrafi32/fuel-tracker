@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import theme from '@/Themes';
+import {useTheme} from "@/context/ThemeContext";
 import { AppText } from '@/components/AppText';
 import { vehicles } from '@/config/Database';
 import {Vehicle} from "@/types/vehicle";
 
 export default function VehiclesScreen() {
+    const { theme } = useTheme();
     const [allVehicles, setVehicles] = useState<Vehicle[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
@@ -57,7 +58,7 @@ export default function VehiclesScreen() {
         }
     };
 
-    const getVehicleColor = (index: number) => {
+    const getVehicleColor = (index: number, theme: any) => {
         const colors = [
             theme.Colors.primary,
             theme.Colors.distanceOrange,
@@ -70,56 +71,56 @@ export default function VehiclesScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={styles(theme).safeArea}>
                 <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.background} />
-                <View style={[styles.container, styles.centerContent]}>
+                <View style={[styles(theme).container, styles(theme).centerContent]}>
                     <ActivityIndicator size="large" color={theme.Colors.primary} />
-                    <AppText style={styles.loadingText}>Loading your vehicles...</AppText>
+                    <AppText style={styles(theme).loadingText}>Loading your vehicles...</AppText>
                 </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles(theme).safeArea}>
             <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.background} />
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.headerRow}>
-                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <View style={styles(theme).container}>
+                <View style={styles(theme).header}>
+                    <View style={styles(theme).headerRow}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles(theme).backButton}>
                             <MaterialIcons name="arrow-back" size={24} color={theme.Colors.primary} />
                         </TouchableOpacity>
-                        <AppText style={styles.title}>My Vehicles</AppText>
+                        <AppText style={styles(theme).title}>My Vehicles</AppText>
                     </View>
                 </View>
 
                 {allVehicles.length === 0 ? (
-                    <View style={[styles.centerContent, styles.emptyState]}>
+                    <View style={[styles(theme).centerContent, styles(theme).emptyState]}>
                         <MaterialIcons name="directions-car" size={80} color={theme.Colors.gray} />
-                        <AppText style={styles.emptyTitle}>No Vehicles Yet</AppText>
-                        <AppText style={styles.emptySubtitle}>
+                        <AppText style={styles(theme).emptyTitle}>No Vehicles Yet</AppText>
+                        <AppText style={styles(theme).emptySubtitle}>
                             Start by adding your first vehicle to track expenses.
                         </AppText>
                     </View>
                 ) : (
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles(theme).scrollContent}>
                         {allVehicles.map((vehicle, index) => (
                             <TouchableOpacity
                                 key={vehicle.id}
-                                style={[styles.vehicleCard, { borderLeftColor: getVehicleColor(index) }]}
+                                style={[styles(theme).vehicleCard, { borderLeftColor: getVehicleColor(index, theme) }]}
                                 // onPress={() => handleVehiclePress(vehicle.id)}
                                 activeOpacity={0.8}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: getVehicleColor(index) }]}>
+                                <View style={[styles(theme).iconCircle, { backgroundColor: getVehicleColor(index, theme) }]}>
                                     <MaterialIcons name={getVehicleIcon(vehicle.type)} size={28} color="#fff" />
                                 </View>
-                                <View style={styles.info}>
-                                    <AppText style={styles.name}>{vehicle.name}</AppText>
-                                    <AppText style={styles.details}>{vehicle.make} {vehicle.model}</AppText>
-                                    <View style={styles.meta}>
-                                        <AppText style={styles.metaText}>{vehicle.year}</AppText>
-                                        <AppText style={styles.metaDot}>·</AppText>
-                                        <AppText style={styles.metaText}>{vehicle.fuelType}</AppText>
+                                <View style={styles(theme).info}>
+                                    <AppText style={styles(theme).name}>{vehicle.name}</AppText>
+                                    <AppText style={styles(theme).details}>{vehicle.make} {vehicle.model}</AppText>
+                                    <View style={styles(theme).meta}>
+                                        <AppText style={styles(theme).metaText}>{vehicle.year}</AppText>
+                                        <AppText style={styles(theme).metaDot}>·</AppText>
+                                        <AppText style={styles(theme).metaText}>{vehicle.fuelType}</AppText>
                                     </View>
                                 </View>
                                 <MaterialIcons name="chevron-right" size={24} color={theme.Colors.gray} />
@@ -129,15 +130,15 @@ export default function VehiclesScreen() {
                 )}
 
                 {/* Floating Action Button */}
-                <TouchableOpacity style={styles.fab} onPress={handleAddVehicle}>
-                    <AppText style={styles.fabIcon}>+</AppText>
+                <TouchableOpacity style={styles(theme).fab} onPress={handleAddVehicle}>
+                    <AppText style={styles(theme).fabIcon}>+</AppText>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: theme.Colors.background,

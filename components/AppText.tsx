@@ -1,20 +1,60 @@
-
 import React from 'react';
 import { Text, TextProps, StyleSheet } from 'react-native';
-import theme from '../Themes';
+import { useTheme } from '@/context/ThemeContext';
 
-export const AppText = ({ style, children, ...props }: TextProps) => {
+interface AppTextProps extends TextProps {
+    variant?: 'body' | 'title' | 'subtitle' | 'caption';
+}
+
+export const AppText: React.FC<AppTextProps> = ({
+                                                    children,
+                                                    style,
+                                                    variant = 'body',
+                                                    ...props
+                                                }) => {
+    const { theme } = useTheme();
+
+    const getVariantStyle = () => {
+        switch (variant) {
+            case 'title':
+                return styles(theme).title;
+            case 'subtitle':
+                return styles(theme).subtitle;
+            case 'caption':
+                return styles(theme).caption;
+            case 'body':
+            default:
+                return styles(theme).body;
+        }
+    };
+
     return (
-        <Text style={[styles.text, style]} {...props}>
+        <Text
+            style={[getVariantStyle(), style]}
+            {...props}
+        >
             {children}
         </Text>
     );
 };
 
-const styles = StyleSheet.create({
-    text: {
+const styles = (theme: any) => StyleSheet.create({
+    body: {
         fontSize: theme.FontSizes.medium,
-        color: theme.Colors.text,
-        fontFamily: theme.FontFamily.regular,
-    }
+        color: theme.Colors.textPrimary,
+    },
+    title: {
+        fontSize: theme.FontSizes.large,
+        fontWeight: theme.FontWeight.bold,
+        color: theme.Colors.textPrimary,
+    },
+    subtitle: {
+        fontSize: theme.FontSizes.medium,
+        fontWeight: theme.FontWeight.medium,
+        color: theme.Colors.textSecondary,
+    },
+    caption: {
+        fontSize: theme.FontSizes.small,
+        color: theme.Colors.textSecondary,
+    },
 });

@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { AppText } from '@/components/AppText';
-import theme from '@/Themes';
+import {AppText}  from '@/components/AppText';
 import type { RefuelLog } from '@/config/Database';
 import { refuels, vehicles } from '@/config/Database';
+import {useTheme} from "@/context/ThemeContext";
 
 interface FuelEntry {
     id: number;
@@ -45,6 +45,7 @@ interface EntryCardProps {
 }
 
 export default function FuelLogScreen(): JSX.Element {
+    const { theme, isDark } = useTheme();
     const router = useRouter();
 
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
@@ -228,66 +229,66 @@ export default function FuelLogScreen(): JSX.Element {
         };
 
         return (
-            <View style={styles.cardWrapper}>
-                <TouchableOpacity style={styles.entryCard} onPress={handleEntryPress}>
-                    <View style={styles.headerRow}>
-                        <View style={styles.badgeContainer}>
-                            <View style={styles.badge}>
+            <View style={styles(theme).cardWrapper}>
+                <TouchableOpacity style={styles(theme).entryCard} onPress={handleEntryPress}>
+                    <View style={styles(theme).headerRow}>
+                        <View style={styles(theme).badgeContainer}>
+                            <View style={styles(theme).badge}>
                                 <MaterialIcons name="local-gas-station" size={14} color="white" />
-                                <AppText style={styles.badgeText}>Fueling</AppText>
+                                <AppText style={styles(theme).badgeText}>Fueling</AppText>
                             </View>
                         </View>
-                        <View style={styles.odometerContainer}>
-                            <AppText style={styles.odometerText}>
-                                <AppText style={styles.bold}>{entry.odometer} km</AppText>
+                        <View style={styles(theme).odometerContainer}>
+                            <AppText style={styles(theme).odometerText}>
+                                <AppText style={styles(theme).bold}>{entry.odometer} km</AppText>
                             </AppText>
-                            <AppText style={styles.dateText}>{entry.date}</AppText>
+                            <AppText style={styles(theme).dateText}>{entry.date}</AppText>
                         </View>
                     </View>
 
-                    <View style={styles.mileageRow}>
-                        <View style={styles.mileageContainer}>
-                            <AppText style={styles.mileageValue}>{entry.mileage}</AppText>
-                            <AppText style={styles.mileageUnit}>km/l</AppText>
+                    <View style={styles(theme).mileageRow}>
+                        <View style={styles(theme).mileageContainer}>
+                            <AppText style={styles(theme).mileageValue}>{entry.mileage}</AppText>
+                            <AppText style={styles(theme).mileageUnit}>km/l</AppText>
                             <MaterialIcons
                                 name={getEfficiencyIcon(entry.efficiency)}
                                 size={16}
                                 color={getEfficiencyColor(entry.efficiency)}
-                                style={styles.efficiencyIcon}
+                                style={styles(theme).efficiencyIcon}
                             />
                         </View>
                     </View>
 
-                    <View style={styles.statsGrid}>
-                        <View style={styles.statItem}>
-                            <View style={[styles.statDot, { backgroundColor: theme.Colors.distanceOrange }]} />
-                            <View style={styles.statContent}>
-                                <AppText style={styles.statLabel}>Distance</AppText>
-                                <AppText style={styles.statValue}>{entry.distance}</AppText>
+                    <View style={styles(theme).statsGrid}>
+                        <View style={styles(theme).statItem}>
+                            <View style={[styles(theme).statDot, { backgroundColor: theme.Colors.distanceOrange }]} />
+                            <View style={styles(theme).statContent}>
+                                <AppText style={styles(theme).statLabel}>Distance</AppText>
+                                <AppText style={styles(theme).statValue}>{entry.distance}</AppText>
                             </View>
                         </View>
 
-                        <View style={styles.statItem}>
-                            <View style={[styles.statDot, { backgroundColor: theme.Colors.volumeYellow }]} />
-                            <View style={styles.statContent}>
-                                <AppText style={styles.statLabel}>Volume</AppText>
-                                <AppText style={styles.statValue}>{entry.volume}</AppText>
+                        <View style={styles(theme).statItem}>
+                            <View style={[styles(theme).statDot, { backgroundColor: theme.Colors.volumeYellow }]} />
+                            <View style={styles(theme).statContent}>
+                                <AppText style={styles(theme).statLabel}>Volume</AppText>
+                                <AppText style={styles(theme).statValue}>{entry.volume}</AppText>
                             </View>
                         </View>
 
-                        <View style={styles.statItem}>
-                            <View style={[styles.statDot, { backgroundColor: theme.Colors.costGreen }]} />
-                            <View style={styles.statContent}>
-                                <AppText style={styles.statLabel}>Cost</AppText>
-                                <AppText style={styles.statValue}>{entry.cost}</AppText>
+                        <View style={styles(theme).statItem}>
+                            <View style={[styles(theme).statDot, { backgroundColor: theme.Colors.costGreen }]} />
+                            <View style={styles(theme).statContent}>
+                                <AppText style={styles(theme).statLabel}>Cost</AppText>
+                                <AppText style={styles(theme).statValue}>{entry.cost}</AppText>
                             </View>
                         </View>
 
-                        <View style={styles.statItem}>
-                            <View style={[styles.statDot, { backgroundColor: '#9C27B0' }]} />
-                            <View style={styles.statContent}>
-                                <AppText style={styles.statLabel}>Rate</AppText>
-                                <AppText style={styles.statValue}>{entry.rate}</AppText>
+                        <View style={styles(theme).statItem}>
+                            <View style={[styles(theme).statDot, { backgroundColor: '#9C27B0' }]} />
+                            <View style={styles(theme).statContent}>
+                                <AppText style={styles(theme).statLabel}>Rate</AppText>
+                                <AppText style={styles(theme).statValue}>{entry.rate}</AppText>
                             </View>
                         </View>
                     </View>
@@ -309,23 +310,23 @@ export default function FuelLogScreen(): JSX.Element {
             animationType="fade"
             statusBarTranslucent
         >
-            <TouchableOpacity style={styles.modalTouchable} onPress={onClose} activeOpacity={1}>
-                <View style={styles.dropdownModal}>
-                    <AppText style={styles.dropdownTitle}>Select Vehicle</AppText>
+            <TouchableOpacity style={styles(theme).modalTouchable} onPress={onClose} activeOpacity={1}>
+                <View style={styles(theme).dropdownModal}>
+                    <AppText style={styles(theme).dropdownTitle}>Select Vehicle</AppText>
                     <ScrollView style={{ maxHeight: 300 }}>
                         {vehicles.map((vehicle) => (
                             <TouchableOpacity
                                 key={vehicle.id}
                                 style={[
-                                    styles.dropdownOption,
-                                    selectedVehicleId === vehicle.id && styles.selectedOption,
+                                    styles(theme).dropdownOption,
+                                    selectedVehicleId === vehicle.id && styles(theme).selectedOption,
                                 ]}
                                 onPress={() => onSelect(vehicle.id)}
                             >
                                 <AppText
                                     style={[
-                                        styles.dropdownOptionText,
-                                        selectedVehicleId === vehicle.id && styles.selectedOptionText,
+                                        styles(theme).dropdownOptionText,
+                                        selectedVehicleId === vehicle.id && styles(theme).selectedOptionText,
                                     ]}
                                 >
                                     {vehicle.name}
@@ -336,10 +337,10 @@ export default function FuelLogScreen(): JSX.Element {
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity
-                            style={[styles.dropdownOption, { borderTopWidth: 1, borderTopColor: '#ddd' }]}
+                            style={[styles(theme).dropdownOption, { borderTopWidth: 1, borderTopColor: '#ddd' }]}
                             onPress={() => onSelect('add_vehicle')}
                         >
-                            <AppText style={[styles.dropdownOptionText, { color: theme.Colors.primary }]}>
+                            <AppText style={[styles(theme).dropdownOptionText, { color: theme.Colors.primary }]}>
                                 + Add Vehicle
                             </AppText>
                         </TouchableOpacity>
@@ -351,10 +352,10 @@ export default function FuelLogScreen(): JSX.Element {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={[styles.container, styles.centerContent]}>
+            <SafeAreaView style={styles(theme).safeArea}>
+                <View style={[styles(theme).container, styles(theme).centerContent]}>
                     <ActivityIndicator size="large" color={theme.Colors.primary} />
-                    <AppText style={styles.loadingText}>Loading data...</AppText>
+                    <AppText style={styles(theme).loadingText}>Loading data...</AppText>
                 </View>
             </SafeAreaView>
         );
@@ -362,18 +363,18 @@ export default function FuelLogScreen(): JSX.Element {
 
     if (!loading && availableVehicles.length === 0) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.container}>
-                    <AppText style={styles.title}>Fuel Log</AppText>
+            <SafeAreaView style={styles(theme).safeArea}>
+                <View style={styles(theme).container}>
+                    <AppText style={styles(theme).title}>Fuel Log</AppText>
 
-                    <View style={[styles.container, styles.centerContent]}>
+                    <View style={[styles(theme).container, styles(theme).centerContent]}>
                         <MaterialIcons name="directions-car" size={64} color={theme.Colors.gray} />
-                        <AppText style={styles.emptyTitle}>No Vehicles Available</AppText>
-                        <AppText style={styles.emptySubtitle}>
+                        <AppText style={styles(theme).emptyTitle}>No Vehicles Available</AppText>
+                        <AppText style={styles(theme).emptySubtitle}>
                             Add a vehicle to start tracking fuel consumption
                         </AppText>
-                        <TouchableOpacity style={styles.emptyButton} onPress={handleAddVehicle}>
-                            <AppText style={styles.emptyButtonText}>Add Vehicle</AppText>
+                        <TouchableOpacity style={styles(theme).emptyButton} onPress={handleAddVehicle}>
+                            <AppText style={styles(theme).emptyButtonText}>Add Vehicle</AppText>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -382,12 +383,12 @@ export default function FuelLogScreen(): JSX.Element {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <AppText style={styles.title}>Fuel Log</AppText>
+        <SafeAreaView style={styles(theme).safeArea}>
+            <View style={styles(theme).container}>
+                <AppText style={styles(theme).title}>Fuel Log</AppText>
 
                 <TouchableOpacity
-                    style={styles.vehicleCard}
+                    style={styles(theme).vehicleCard}
                     onPress={() => setVehicleDropdownVisible(true)}
                     activeOpacity={0.7}
                 >
@@ -395,9 +396,9 @@ export default function FuelLogScreen(): JSX.Element {
                         name="two-wheeler"
                         size={24}
                         color={theme.Colors.white}
-                        style={styles.vehicleIcon}
+                        style={styles(theme).vehicleIcon}
                     />
-                    <AppText style={styles.vehicleText}>
+                    <AppText style={styles(theme).vehicleText}>
                         {availableVehicles.find((v) => v.id === selectedVehicleId)?.name || 'Vehicle'}
                     </AppText>
                     <MaterialIcons
@@ -409,28 +410,28 @@ export default function FuelLogScreen(): JSX.Element {
                 </TouchableOpacity>
 
                 {vehicleLoading ? (
-                    <View style={[styles.container, styles.centerContent]}>
+                    <View style={[styles(theme).container, styles(theme).centerContent]}>
                         <ActivityIndicator size="large" color={theme.Colors.primary} />
-                        <AppText style={styles.loadingText}>Loading vehicle data...</AppText>
+                        <AppText style={styles(theme).loadingText}>Loading vehicle data...</AppText>
                     </View>
                 ) : fuelEntries.length === 0 ? (
-                    <View style={[styles.container, styles.centerContent]}>
+                    <View style={[styles(theme).container, styles(theme).centerContent]}>
                         <MaterialIcons name="local-gas-station" size={64} color={theme.Colors.gray} />
-                        <AppText style={styles.emptyTitle}>No Fuel Entries</AppText>
-                        <AppText style={styles.emptySubtitle}>
+                        <AppText style={styles(theme).emptyTitle}>No Fuel Entries</AppText>
+                        <AppText style={styles(theme).emptySubtitle}>
                             Start tracking your fuel consumption by adding your first entry
                         </AppText>
-                        <TouchableOpacity style={styles.emptyButton} onPress={handleAddRefuel}>
-                            <AppText style={styles.emptyButtonText}>Add First Entry</AppText>
+                        <TouchableOpacity style={styles(theme).emptyButton} onPress={handleAddRefuel}>
+                            <AppText style={styles(theme).emptyButtonText}>Add First Entry</AppText>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <>
-                        <AppText style={styles.detailsTitle}>Recent Entries ({fuelEntries.length})</AppText>
+                        <AppText style={styles(theme).detailsTitle}>Recent Entries ({fuelEntries.length})</AppText>
 
                         <ScrollView
-                            style={styles.entriesContainer}
-                            contentContainerStyle={styles.scrollContent}
+                            style={styles(theme).entriesContainer}
+                            contentContainerStyle={styles(theme).scrollContent}
                             showsVerticalScrollIndicator={false}
                             refreshControl={
                                 <RefreshControl
@@ -449,8 +450,8 @@ export default function FuelLogScreen(): JSX.Element {
                 )}
 
                 {fuelEntries.length > 0 && (
-                    <TouchableOpacity style={styles.fab} onPress={handleAddRefuel}>
-                        <AppText style={styles.fabIcon}>+</AppText>
+                    <TouchableOpacity style={styles(theme).fab} onPress={handleAddRefuel}>
+                        <AppText style={styles(theme).fabIcon}>+</AppText>
                     </TouchableOpacity>
                 )}
 
@@ -466,7 +467,7 @@ export default function FuelLogScreen(): JSX.Element {
     );
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: theme.Colors.background,

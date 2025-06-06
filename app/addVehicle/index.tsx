@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import theme from "@/Themes";
+import {useTheme} from "@/context/ThemeContext";
 import {createVehicle, CreateVehicleData} from "@/config/Database/models/vehicle";
 import { FUEL_TYPES, FuelType } from "@/types/vehicle";
 
@@ -71,10 +71,11 @@ const InputField = React.forwardRef<TextInput, InputFieldProps>(
         ref: ForwardedRef<TextInput>
     ) => {
         const [isFocused, setIsFocused] = useState(false);
+        const { theme } = useTheme();
 
         return (
-            <View style={styles.inputContainer}>
-                <View style={styles.labelContainer}>
+            <View style={styles(theme).inputContainer}>
+                <View style={styles(theme).labelContainer}>
                     <MaterialIcons
                         name={icon}
                         size={22}
@@ -82,24 +83,24 @@ const InputField = React.forwardRef<TextInput, InputFieldProps>(
                     />
                     <Text
                         style={[
-                            styles.inputLabel,
+                            styles(theme).inputLabel,
                             { color: isFocused ? theme.Colors.primary : theme.Colors.textPrimary },
                         ]}
                     >
                         {label}
-                        {required && <Text style={styles.required}>*</Text>}
+                        {required && <Text style={styles(theme).required}>*</Text>}
                     </Text>
                 </View>
                 <View
                     style={[
-                        styles.inputWrapper,
-                        isFocused && styles.inputWrapperFocused,
-                        (value && isFocused) && styles.inputWrapperFilled,
+                        styles(theme).inputWrapper,
+                        isFocused && styles(theme).inputWrapperFocused,
+                        (value && isFocused) && styles(theme).inputWrapperFilled,
                     ]}
                 >
                     <TextInput
                         ref={ref}
-                        style={styles.textInput}
+                        style={styles(theme).textInput}
                         value={value}
                         onChangeText={onChangeText}
                         placeholder={placeholder}
@@ -131,14 +132,15 @@ const DropdownModal: React.FC<DropdownModalProps> = ({
                                                          onClose,
                                                          title,
                                                      }) => {
+    const { theme } = useTheme();
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                    <View style={styles.modalHandle} />
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{title}</Text>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <View style={styles(theme).modalOverlay}>
+                <View style={styles(theme).modalContent}>
+                    <View style={styles(theme).modalHandle} />
+                    <View style={styles(theme).modalHeader}>
+                        <Text style={styles(theme).modalTitle}>{title}</Text>
+                        <TouchableOpacity onPress={onClose} style={styles(theme).closeButton}>
                             <MaterialIcons name="close" size={24} color={theme.Colors.textPrimary} />
                         </TouchableOpacity>
                     </View>
@@ -147,8 +149,8 @@ const DropdownModal: React.FC<DropdownModalProps> = ({
                             <TouchableOpacity
                                 key={value}
                                 style={[
-                                    styles.modalOption,
-                                    selectedValue === value && styles.selectedOption,
+                                    styles(theme).modalOption,
+                                    selectedValue === value && styles(theme).selectedOption,
                                 ]}
                                 onPress={() => {
                                     onSelect(value);
@@ -157,14 +159,14 @@ const DropdownModal: React.FC<DropdownModalProps> = ({
                             >
                                 <Text
                                     style={[
-                                        styles.modalOptionText,
-                                        selectedValue === value && styles.selectedOptionText,
+                                        styles(theme).modalOptionText,
+                                        selectedValue === value && styles(theme).selectedOptionText,
                                     ]}
                                 >
                                     {label}
                                 </Text>
                                 {selectedValue === value && (
-                                    <View style={styles.checkIconContainer}>
+                                    <View style={styles(theme).checkIconContainer}>
                                         <MaterialIcons name="check" size={20} color={theme.Colors.white} />
                                     </View>
                                 )}
@@ -179,6 +181,7 @@ const DropdownModal: React.FC<DropdownModalProps> = ({
 
 export default function AddVehicleScreen(): JSX.Element {
     const navigation = useNavigation();
+    const { theme } = useTheme();
     const [formData, setFormData] = useState<VehicleFormData>({
         name: "",
         make: "",
@@ -234,7 +237,7 @@ export default function AddVehicleScreen(): JSX.Element {
 
         setTimeout(() => {
             if (ref.current && scrollViewRef.current) {
-                ref.current.measureInWindow((x, y, width, height) => {
+                ref.current.measureInWindow((_, y, __, ___) => {
                     if (scrollViewRef.current) {
                         const screenHeight = Dimensions.get('window').height;
                         const headerHeight = 120;
@@ -330,33 +333,33 @@ export default function AddVehicleScreen(): JSX.Element {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles(theme).container}>
             {/* Fixed Header */}
-            <View style={styles.header}>
+            <View style={styles(theme).header}>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={styles(theme).backButton}
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
                     <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
                 </TouchableOpacity>
-                <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>Add New Vehicle</Text>
-                    <Text style={styles.headerSubtitle}>Fill in the details below</Text>
+                <View style={styles(theme).headerContent}>
+                    <Text style={styles(theme).headerTitle}>Add New Vehicle</Text>
+                    <Text style={styles(theme).headerSubtitle}>Fill in the details below</Text>
                 </View>
             </View>
 
             {/* Form with KeyboardAvoidingView */}
             <KeyboardAvoidingView
-                style={styles.formWrapper}
+                style={styles(theme).formWrapper}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
             >
                 <ScrollView
                     ref={scrollViewRef}
-                    style={styles.formContainer}
+                    style={styles(theme).formContainer}
                     contentContainerStyle={[
-                        styles.scrollContent,
+                        styles(theme).scrollContent,
                         {
                             paddingBottom: keyboardHeight > 0
                                 ? keyboardHeight + 100  // Extra space when keyboard is open
@@ -367,7 +370,7 @@ export default function AddVehicleScreen(): JSX.Element {
                     showsVerticalScrollIndicator={false}
                     scrollEventThrottle={16}
                 >
-                    <View style={styles.formSection}>
+                    <View style={styles(theme).formSection}>
                         <InputField
                             ref={nameRef}
                             label="Vehicle Name"
@@ -454,27 +457,27 @@ export default function AddVehicleScreen(): JSX.Element {
                             onSubmitEditing={() => Keyboard.dismiss()}
                         />
 
-                        <View style={styles.inputContainer}>
-                            <View style={styles.labelContainer}>
+                        <View style={styles(theme).inputContainer}>
+                            <View style={styles(theme).labelContainer}>
                                 <MaterialIcons
                                     name="local-gas-station"
                                     size={22}
-                                    color={theme.Colors.primary}
+                                    color={theme.Colors.textSecondary}
                                 />
-                                <Text style={[styles.inputLabel, { color: theme.Colors.textPrimary }]}>
+                                <Text style={[styles(theme).inputLabel, { color: theme.Colors.textPrimary }]}>
                                     Fuel Type
-                                    <Text style={styles.required}>*</Text>
+                                    <Text style={styles(theme).required}>*</Text>
                                 </Text>
                             </View>
                             <TouchableOpacity
-                                style={styles.dropdownButton}
+                                style={styles(theme).dropdownButton}
                                 onPress={() => {
                                     Keyboard.dismiss();
                                     setFuelTypeModalVisible(true);
                                 }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={styles.dropdownButtonText}>
+                                <Text style={styles(theme).dropdownButtonText}>
                                     {FUEL_TYPES[formData.fuelType]}
                                 </Text>
                                 <MaterialIcons
@@ -486,22 +489,22 @@ export default function AddVehicleScreen(): JSX.Element {
                         </View>
                     </View>
 
-                    <View style={styles.actionContainer}>
+                    <View style={styles(theme).actionContainer}>
                         <TouchableOpacity
-                            style={styles.cancelButton}
+                            style={styles(theme).cancelButton}
                             onPress={() => navigation.goBack()}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={styles(theme).cancelButtonText}>Cancel</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.saveButton, isSubmitting && styles.disabledButton]}
+                            style={[styles(theme).saveButton, isSubmitting && styles(theme).disabledButton]}
                             onPress={handleSave}
                             disabled={isSubmitting}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.saveButtonText}>
+                            <Text style={styles(theme).saveButtonText}>
                                 {isSubmitting ? "Saving..." : "Add Vehicle"}
                             </Text>
                         </TouchableOpacity>
@@ -521,7 +524,7 @@ export default function AddVehicleScreen(): JSX.Element {
     );
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.Colors.background,

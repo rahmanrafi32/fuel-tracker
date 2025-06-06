@@ -13,21 +13,9 @@ import {
 import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
 import {MaterialIcons, Ionicons} from '@expo/vector-icons';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import theme from '@/Themes';
+import {useTheme} from "@/context/ThemeContext";
 import { refuels } from '@/config/Database';
 import type { UpdateRefuelLogData } from '@/config/Database';
-
-interface FuelEntryData {
-    fuelDate: Date;
-    odometer: string;
-    fuelVolume: string;
-    fuelUnitPrice: string;
-    notes: string;
-    fullTank: boolean;
-    missedLastFuel: boolean;
-    distanceUnit: DistanceUnit;
-    volumeUnit: VolumeUnit;
-}
 
 type DistanceUnit = 'KM' | 'Miles';
 type VolumeUnit = 'L' | 'Gallon (US)' | 'Gallon (UK)';
@@ -48,6 +36,7 @@ type RouteParams = {
 };
 
 export default function EditFuelEntryScreen() {
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const route = useRoute<RouteProp<RouteParams, 'editFuel'>>();
     const entryId = route.params?.entryId;
@@ -254,15 +243,15 @@ export default function EditFuelEntryScreen() {
                                                              title
                                                          }) => (
         <Modal visible={visible} transparent animationType="fade">
-            <TouchableOpacity style={styles.modalOverlay} onPress={onClose}>
-                <View style={styles.dropdownModal}>
-                    <Text style={styles.dropdownTitle}>{title}</Text>
+            <TouchableOpacity style={styles(theme).modalOverlay} onPress={onClose}>
+                <View style={styles(theme).dropdownModal}>
+                    <Text style={styles(theme).dropdownTitle}>{title}</Text>
                     {options.map((option: string) => (
                         <TouchableOpacity
                             key={option}
                             style={[
-                                styles.dropdownOption,
-                                selectedValue === option && styles.selectedOption
+                                styles(theme).dropdownOption,
+                                selectedValue === option && styles(theme).selectedOption
                             ]}
                             onPress={() => {
                                 onSelect(option);
@@ -270,8 +259,8 @@ export default function EditFuelEntryScreen() {
                             }}
                         >
                             <Text style={[
-                                styles.dropdownOptionText,
-                                selectedValue === option && styles.selectedOptionText
+                                styles(theme).dropdownOptionText,
+                                selectedValue === option && styles(theme).selectedOptionText
                             ]}>
                                 {option}
                             </Text>
@@ -287,7 +276,7 @@ export default function EditFuelEntryScreen() {
     
     if (isLoading) {
         return (
-            <View style={[styles.container, styles.centerContent]}>
+            <View style={[styles(theme).container, styles(theme).centerContent]}>
                 <Text>Loading entry {entryId}...</Text>
                 {loadError && <Text style={{color: 'red', marginTop: 10}}>{loadError}</Text>}
             </View>
@@ -297,12 +286,12 @@ export default function EditFuelEntryScreen() {
     // Show error state if there's an issue
     if (loadError) {
         return (
-            <View style={[styles.container, styles.centerContent]}>
+            <View style={[styles(theme).container, styles(theme).centerContent]}>
                 <Text style={{color: 'red', textAlign: 'center', marginBottom: 20}}>
                     Error: {loadError}
                 </Text>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={styles(theme).backButton}
                     onPress={() => navigation.goBack()}
                 >
                     <Text>Go Back</Text>
@@ -312,17 +301,17 @@ export default function EditFuelEntryScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.form}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
+            <View style={styles(theme).form}>
                 {/* Date Picker */}
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles(theme).fieldRow}>
+                    <View style={styles(theme).iconContainer}>
                         <Ionicons name="calendar" size={20} color={theme.Colors.primary}/>
                     </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fueling date</Text>
-                        <View style={styles.dateDisplay}>
-                            <Text style={styles.dateValue}>{formatDate(fuelDate)}</Text>
+                    <View style={styles(theme).fieldContent}>
+                        <Text style={styles(theme).label}>Fueling date</Text>
+                        <View style={styles(theme).dateDisplay}>
+                            <Text style={styles(theme).dateValue}>{formatDate(fuelDate)}</Text>
                             <Ionicons name="chevron-down" size={16} color={theme.Colors.gray}/>
                         </View>
                     </View>
@@ -338,25 +327,26 @@ export default function EditFuelEntryScreen() {
                 )}
 
                 {/* Odometer */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
+                <View style={styles(theme).fieldRow}>
+                    <View style={styles(theme).iconContainer}>
                         <MaterialIcons name="speed" size={20} color={theme.Colors.primary}/>
                     </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Current odometer</Text>
-                        <View style={styles.inputRow}>
+                    <View style={styles(theme).fieldContent}>
+                        <Text style={styles(theme).label}>Current odometer</Text>
+                        <View style={styles(theme).inputRow}>
                             <TextInput
                                 placeholder="Enter reading"
-                                style={styles.input}
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={styles(theme).input}
                                 keyboardType="numeric"
                                 value={odometer}
                                 onChangeText={(text: string) => setOdometer(text)}
                             />
                             <TouchableOpacity
-                                style={styles.unitSelector}
+                                style={styles(theme).unitSelector}
                                 onPress={() => setShowDistanceDropdown(true)}
                             >
-                                <Text style={styles.unitText}>{distanceUnit}</Text>
+                                <Text style={styles(theme).unitText}>{distanceUnit}</Text>
                                 <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
                             </TouchableOpacity>
                         </View>
@@ -364,25 +354,26 @@ export default function EditFuelEntryScreen() {
                 </View>
 
                 {/* Fuel Volume */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
+                <View style={styles(theme).fieldRow}>
+                    <View style={styles(theme).iconContainer}>
                         <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary}/>
                     </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fuel volume</Text>
-                        <View style={styles.inputRow}>
+                    <View style={styles(theme).fieldContent}>
+                        <Text style={styles(theme).label}>Fuel volume</Text>
+                        <View style={styles(theme).inputRow}>
                             <TextInput
                                 placeholder="Enter volume"
-                                style={styles.input}
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={styles(theme).input}
                                 keyboardType="numeric"
                                 value={fuelVolume}
                                 onChangeText={(text: string) => setFuelVolume(text)}
                             />
                             <TouchableOpacity
-                                style={styles.unitSelector}
+                                style={styles(theme).unitSelector}
                                 onPress={() => setShowVolumeDropdown(true)}
                             >
-                                <Text style={styles.unitText}>{volumeUnit}</Text>
+                                <Text style={styles(theme).unitText}>{volumeUnit}</Text>
                                 <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
                             </TouchableOpacity>
                         </View>
@@ -390,15 +381,16 @@ export default function EditFuelEntryScreen() {
                 </View>
 
                 {/* Fuel Unit Price */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
+                <View style={styles(theme).fieldRow}>
+                    <View style={styles(theme).iconContainer}>
                         <Ionicons name="pricetag" size={20} color={theme.Colors.primary}/>
                     </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Fuel unit price</Text>
+                    <View style={styles(theme).fieldContent}>
+                        <Text style={styles(theme).label}>Fuel unit price</Text>
                         <TextInput
                             placeholder="Price per unit"
-                            style={styles.input}
+                            placeholderTextColor={theme.Colors.textSecondary}
+                            style={styles(theme).input}
                             keyboardType="numeric"
                             value={fuelUnitPrice}
                             onChangeText={(text: string) => setFuelUnitPrice(text)}
@@ -407,15 +399,16 @@ export default function EditFuelEntryScreen() {
                 </View>
 
                 {/* Notes */}
-                <View style={styles.fieldRow}>
-                    <View style={styles.iconContainer}>
+                <View style={styles(theme).fieldRow}>
+                    <View style={styles(theme).iconContainer}>
                         <Ionicons name="document-text" size={20} color={theme.Colors.primary}/>
                     </View>
-                    <View style={styles.fieldContent}>
-                        <Text style={styles.label}>Notes</Text>
+                    <View style={styles(theme).fieldContent}>
+                        <Text style={styles(theme).label}>Notes</Text>
                         <TextInput
                             placeholder="Add any notes..."
-                            style={[styles.input, styles.multilineInput]}
+                            placeholderTextColor={theme.Colors.textSecondary}
+                            style={[styles(theme).input, styles(theme).multilineInput]}
                             value={notes}
                             onChangeText={(text: string) => setNotes(text)}
                             multiline
@@ -425,11 +418,11 @@ export default function EditFuelEntryScreen() {
                 </View>
 
                 {/* Switches */}
-                <View style={styles.switchSection}>
-                    <View style={styles.switchRow}>
-                        <View style={styles.switchContent}>
-                            <Ionicons name="car" size={18} color={theme.Colors.gray} style={styles.switchIcon}/>
-                            <Text style={styles.switchLabel}>Full tank</Text>
+                <View style={styles(theme).switchSection}>
+                    <View style={styles(theme).switchRow}>
+                        <View style={styles(theme).switchContent}>
+                            <Ionicons name="car" size={18} color={theme.Colors.gray} style={styles(theme).switchIcon}/>
+                            <Text style={styles(theme).switchLabel}>Full tank</Text>
                         </View>
                         <Switch
                             value={fullTank}
@@ -439,11 +432,11 @@ export default function EditFuelEntryScreen() {
                         />
                     </View>
 
-                    <View style={styles.switchRow}>
-                        <View style={styles.switchContent}>
+                    <View style={styles(theme).switchRow}>
+                        <View style={styles(theme).switchContent}>
                             <Ionicons name="alert-circle" size={18} color={theme.Colors.gray}
-                                      style={styles.switchIcon}/>
-                            <Text style={styles.switchLabel}>Previous fuelling missed</Text>
+                                      style={styles(theme).switchIcon}/>
+                            <Text style={styles(theme).switchLabel}>Previous fuelling missed</Text>
                         </View>
                         <Switch
                             value={missedLastFuel}
@@ -455,34 +448,34 @@ export default function EditFuelEntryScreen() {
                 </View>
 
                 {/* Action Buttons */}
-                <View style={styles.buttonContainer}>
+                <View style={styles(theme).buttonContainer}>
                     <TouchableOpacity
-                        style={styles.backButton}
+                        style={styles(theme).backButton}
                         onPress={handleBack}
                         disabled={isSaving || isDeleting}
                     >
                         <Ionicons name="arrow-back" size={16} color={theme.Colors.primary}/>
-                        <Text style={styles.backButtonText}>BACK</Text>
+                        <Text style={styles(theme).backButtonText}>BACK</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.deleteButton}
+                        style={styles(theme).deleteButton}
                         onPress={handleDelete}
                         disabled={isSaving || isDeleting}
                     >
                         <Ionicons name="trash" size={16} color={theme.Colors.white}/>
-                        <Text style={styles.deleteButtonText}>
+                        <Text style={styles(theme).deleteButtonText}>
                             {isDeleting ? 'DELETING...' : 'DELETE'}
                         </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.editButton}
+                        style={styles(theme).editButton}
                         onPress={handleEdit}
                         disabled={isSaving || isDeleting}
                     >
                         <Ionicons name="checkmark-circle" size={16} color={theme.Colors.white}/>
-                        <Text style={styles.editButtonText}>
+                        <Text style={styles(theme).editButtonText}>
                             {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
                         </Text>
                     </TouchableOpacity>
@@ -511,7 +504,7 @@ export default function EditFuelEntryScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     container: {
         padding: theme.Spacing.lg,
         paddingBottom: theme.Spacing.xl,

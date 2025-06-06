@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,8 @@ import {
     Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import theme from '@/Themes';
-import {useNavigation} from "@react-navigation/native";
-import {useRouter} from "expo-router";
+import { useRouter } from "expo-router";
+import { useTheme } from '@/context/ThemeContext';
 
 export interface MenuItem {
     id: number;
@@ -26,13 +25,12 @@ export interface MenuItem {
     onToggle?: (value: boolean) => void;
 }
 
-export default function ProfileSettingsScreen(){
+export default function ProfileSettingsScreen() {
     const router = useRouter();
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const { theme, isDark, setThemeType } = useTheme();
 
     const handleDarkModeToggle = (value: boolean) => {
-        setIsDarkMode(value);
-        console.log('Dark mode toggled:', value);
+        setThemeType(value ? 'dark' : 'light');
     };
 
     const menuItems: MenuItem[] = [
@@ -49,7 +47,7 @@ export default function ProfileSettingsScreen(){
             title: 'Dark Mode',
             icon: 'moon-outline',
             hasToggle: true,
-            toggleValue: isDarkMode,
+            toggleValue: isDark,
             onToggle: handleDarkModeToggle,
         },
         {
@@ -91,19 +89,19 @@ export default function ProfileSettingsScreen(){
         <TouchableOpacity
             key={item.id}
             style={[
-                styles.menuItem,
-                item.isPremium && styles.premiumItem,
-                item.isLogout && styles.logoutItem,
+                styles(theme).menuItem,
+                item.isPremium && styles(theme).premiumItem,
+                item.isLogout && styles(theme).logoutItem,
             ]}
             onPress={item.hasToggle ? undefined : item.onPress}
             activeOpacity={item.hasToggle ? 1 : 0.7}
             disabled={item.hasToggle}
         >
-            <View style={styles.menuItemLeft}>
+            <View style={styles(theme).menuItemLeft}>
                 <View style={[
-                    styles.iconContainer,
-                    item.isPremium && styles.premiumIconContainer,
-                    item.isLogout && styles.logoutIconContainer,
+                    styles(theme).iconContainer,
+                    item.isPremium && styles(theme).premiumIconContainer,
+                    item.isLogout && styles(theme).logoutIconContainer,
                 ]}>
                     <Ionicons
                         name={item.icon}
@@ -118,14 +116,14 @@ export default function ProfileSettingsScreen(){
                     />
                 </View>
                 <Text style={[
-                    styles.menuItemText,
-                    item.isPremium && styles.premiumText,
-                    item.isLogout && styles.logoutText,
+                    styles(theme).menuItemText,
+                    item.isPremium && styles(theme).premiumText,
+                    item.isLogout && styles(theme).logoutText,
                 ]}>
                     {item.title}
                 </Text>
                 {item.isPremium && (
-                    <View style={styles.premiumBadge}>
+                    <View style={styles(theme).premiumBadge}>
                         <Ionicons name="diamond" size={12} color={theme.Colors.primary} />
                     </View>
                 )}
@@ -151,52 +149,55 @@ export default function ProfileSettingsScreen(){
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.background} />
+        <SafeAreaView style={styles(theme).container}>
+            <StatusBar
+                barStyle={isDark ? "light-content" : "dark-content"}
+                backgroundColor={theme.Colors.background}
+            />
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles(theme).scrollView} showsVerticalScrollIndicator={false}>
                 {/* Header Section */}
-                <View style={styles.header}>
+                <View style={styles(theme).header}>
                     {/* App Icon */}
-                    <View style={styles.appIconContainer}>
-                        <View style={styles.appIcon}>
+                    <View style={styles(theme).appIconContainer}>
+                        <View style={styles(theme).appIcon}>
                             <Ionicons name="car" size={32} color={theme.Colors.white} />
                         </View>
                     </View>
 
                     {/* App Info */}
-                    <View style={styles.appInfo}>
-                        <Text style={styles.appName}>Vehicle Manager</Text>
-                        <Text style={styles.appSubtitle}>Manage your settings and preferences</Text>
+                    <View style={styles(theme).appInfo}>
+                        <Text style={styles(theme).appName}>Vehicle Manager</Text>
+                        <Text style={styles(theme).appSubtitle}>Manage your settings and preferences</Text>
                     </View>
                 </View>
 
                 {/* Main Menu Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Settings</Text>
-                    <View style={styles.menuContainer}>
+                <View style={styles(theme).section}>
+                    <Text style={styles(theme).sectionTitle}>Settings</Text>
+                    <View style={styles(theme).menuContainer}>
                         {menuItems.map(renderMenuItem)}
                     </View>
                 </View>
 
                 {/* Support & Info Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Support & Information</Text>
-                    <View style={styles.menuContainer}>
+                <View style={styles(theme).section}>
+                    <Text style={styles(theme).sectionTitle}>Support & Information</Text>
+                    <View style={styles(theme).menuContainer}>
                         {bottomMenuItems.map(renderMenuItem)}
                     </View>
                 </View>
 
                 {/* Version Info */}
-                <View style={styles.versionContainer}>
-                    <Text style={styles.versionText}>Version 1.0.0</Text>
+                <View style={styles(theme).versionContainer}>
+                    <Text style={styles(theme).versionText}>Version 1.0.0</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const styles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.Colors.background,
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: theme.Spacing.xl,
         paddingHorizontal: theme.Spacing.lg,
-        backgroundColor: theme.Colors.white,
+        backgroundColor: theme.Colors.cardBackground,
         marginBottom: theme.Spacing.md,
     },
     appIconContainer: {

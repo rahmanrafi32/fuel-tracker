@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
-import theme from '@/Themes';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function MainLayout() {
+    const { theme, isDark } = useTheme();
+
     return (
         <Tabs
             screenOptions={{
@@ -11,7 +13,7 @@ export default function MainLayout() {
                 tabBarInactiveTintColor: theme.Colors.gray,
                 tabBarStyle: {
                     backgroundColor: theme.Colors.background,
-                    borderTopColor: '#ddd',
+                    borderTopColor: isDark ? '#333' : '#ddd',
                 },
             }}
         >
