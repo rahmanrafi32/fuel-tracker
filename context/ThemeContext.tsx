@@ -10,7 +10,7 @@ const darkTheme = {
         background: '#121212',
         cardBackground: '#1E1E1E',
         textPrimary: '#FFFFFF',
-        textSecondary: '#AAAAAA',
+        textSecondary: '#f3f0f0',
         textHeader: '#FFFFFF',
         white: '#1E1E1E',
         black: '#FFFFFF',
