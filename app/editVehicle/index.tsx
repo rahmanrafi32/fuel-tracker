@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, ForwardedRef, JSX, useEffect } from "react";
+import React, { useState, useCallback, useRef, JSX, useEffect } from "react";
 import {
     View,
     Text,
@@ -6,13 +6,10 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    Modal,
     Alert,
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    NativeSyntheticEvent,
-    TextInputFocusEventData,
     Dimensions,
     ActivityIndicator,
 } from "react-native";
@@ -21,165 +18,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { findVehicleById, updateVehicle, deleteVehicle } from "@/config/Database/models/vehicle";
-import { FUEL_TYPES, FuelType } from "@/types/vehicle";
-
-interface VehicleFormData {
-    name: string;
-    make: string;
-    model: string;
-    year: string;
-    licensePlate: string;
-    fuelType: FuelType;
-    tankCapacity: string;
-}
-
-interface DropdownModalProps {
-    visible: boolean;
-    options: Record<string, string>;
-    selectedValue: string;
-    onSelect: (value: string) => void;
-    onClose: () => void;
-    title: string;
-}
-
-interface InputFieldProps {
-    label: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    placeholder: string;
-    keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
-    required?: boolean;
-    icon: keyof typeof MaterialIcons.glyphMap;
-    returnKeyType?: "done" | "next" | "search" | "go" | "send";
-    onSubmitEditing?: () => void;
-    blurOnSubmit?: boolean;
-    onFocus?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
-}
-
-const InputField = React.forwardRef<TextInput, InputFieldProps>(
-    (
-        {
-            label,
-            value,
-            onChangeText,
-            placeholder,
-            keyboardType = "default",
-            required = false,
-            icon,
-            returnKeyType = "next",
-            onSubmitEditing,
-            onFocus,
-        },
-        ref: ForwardedRef<TextInput>
-    ) => {
-        const [isFocused, setIsFocused] = useState(false);
-        const { theme } = useTheme();
-
-        return (
-            <View style={styles(theme).inputContainer}>
-                <View style={styles(theme).labelContainer}>
-                    <MaterialIcons
-                        name={icon}
-                        size={22}
-                        color={isFocused ? theme.Colors.primary : theme.Colors.gray}
-                    />
-                    <Text
-                        style={[
-                            styles(theme).inputLabel,
-                            { color: isFocused ? theme.Colors.primary : theme.Colors.textPrimary },
-                        ]}
-                    >
-                        {label}
-                        {required && <Text style={styles(theme).required}>*</Text>}
-                    </Text>
-                </View>
-                <View
-                    style={[
-                        styles(theme).inputWrapper,
-                        isFocused && styles(theme).inputWrapperFocused,
-                        (value && isFocused) && styles(theme).inputWrapperFilled,
-                    ]}
-                >
-                    <TextInput
-                        ref={ref}
-                        style={styles(theme).textInput}
-                        value={value}
-                        onChangeText={onChangeText}
-                        placeholder={placeholder}
-                        placeholderTextColor={theme.Colors.gray}
-                        keyboardType={keyboardType}
-                        onFocus={(e: NativeSyntheticEvent<TextInputFocusEventData>) => {
-                            setIsFocused(true);
-                            onFocus && onFocus(e);
-                        }}
-                        onBlur={() => setIsFocused(false)}
-                        autoCorrect={false}
-                        autoCapitalize={keyboardType === "default" ? "words" : "none"}
-                        returnKeyType={returnKeyType}
-                        onSubmitEditing={onSubmitEditing}
-                    />
-                </View>
-            </View>
-        );
-    }
-);
-
-InputField.displayName = 'InputField';
-
-const DropdownModal: React.FC<DropdownModalProps> = ({
-                                                         visible,
-                                                         options,
-                                                         selectedValue,
-                                                         onSelect,
-                                                         onClose,
-                                                         title,
-                                                     }) => {
-    const { theme } = useTheme();
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={styles(theme).modalOverlay}>
-                <View style={styles(theme).modalContent}>
-                    <View style={styles(theme).modalHandle} />
-                    <View style={styles(theme).modalHeader}>
-                        <Text style={styles(theme).modalTitle}>{title}</Text>
-                        <TouchableOpacity onPress={onClose} style={styles(theme).closeButton}>
-                            <MaterialIcons name="close" size={24} color={theme.Colors.textPrimary} />
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {Object.entries(options).map(([value, label]) => (
-                            <TouchableOpacity
-                                key={value}
-                                style={[
-                                    styles(theme).modalOption,
-                                    selectedValue === value && styles(theme).selectedOption,
-                                ]}
-                                onPress={() => {
-                                    onSelect(value);
-                                    onClose();
-                                }}
-                            >
-                                <Text
-                                    style={[
-                                        styles(theme).modalOptionText,
-                                        selectedValue === value && styles(theme).selectedOptionText,
-                                    ]}
-                                >
-                                    {label}
-                                </Text>
-                                {selectedValue === value && (
-                                    <View style={styles(theme).checkIconContainer}>
-                                        <MaterialIcons name="check" size={20} color={theme.Colors.white} />
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </View>
-        </Modal>
-    );
-};
+import { FUEL_TYPES, FuelType, VEHICLE_TYPE_LABELS, VehicleFormData } from "@/types/vehicle";
+import InputField from "@/components/InputField";
+import DropdownModal from "@/components/DropDownModal";
 
 export default function EditVehicleScreen(): JSX.Element {
     const navigation = useNavigation();
@@ -192,12 +33,13 @@ export default function EditVehicleScreen(): JSX.Element {
         make: "",
         model: "",
         year: "",
-        licensePlate: "",
+        vehicleType: "car",
         fuelType: "octane",
         tankCapacity: "",
     });
 
     const [fuelTypeModalVisible, setFuelTypeModalVisible] = useState(false);
+    const [vehicleTypeModalVisible, setVehicleTypeModalVisible] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -207,10 +49,8 @@ export default function EditVehicleScreen(): JSX.Element {
     const makeRef = useRef<TextInput>(null);
     const modelRef = useRef<TextInput>(null);
     const yearRef = useRef<TextInput>(null);
-    const licensePlateRef = useRef<TextInput>(null);
     const tankCapacityRef = useRef<TextInput>(null);
 
-    // Load vehicle data
     useEffect(() => {
         const loadVehicle = async () => {
             if (!id) {
@@ -226,7 +66,7 @@ export default function EditVehicleScreen(): JSX.Element {
                         make: vehicle.make || "",
                         model: vehicle.model || "",
                         year: vehicle.year ? vehicle.year.toString() : "",
-                        licensePlate: vehicle.licensePlate || "",
+                        vehicleType: vehicle.vehicleType || "car",
                         fuelType: vehicle.fuelType || "octane",
                         tankCapacity: vehicle.tankCapacity ? vehicle.tankCapacity.toString() : "",
                     });
@@ -353,13 +193,11 @@ export default function EditVehicleScreen(): JSX.Element {
                 model: formData.model.trim(),
                 year,
                 fuelType: formData.fuelType,
-                licensePlate: formData.licensePlate.trim() || undefined,
+                vehicleType: formData.vehicleType,
                 tankCapacity: formData.tankCapacity
                     ? parseFloat(formData.tankCapacity)
                     : undefined,
             };
-
-            console.log("Vehicle data to update:", vehicleData);
 
             await updateVehicle(Number(id), vehicleData);
             console.log("Vehicle updated successfully");
@@ -446,7 +284,7 @@ export default function EditVehicleScreen(): JSX.Element {
                         styles(theme).scrollContent,
                         {
                             paddingBottom: keyboardHeight > 0
-                                ? keyboardHeight + 100  // Extra space when keyboard is open
+                                ? keyboardHeight + 100 
                                 : theme.Spacing.xl * 2
                         }
                     ]}
@@ -507,23 +345,42 @@ export default function EditVehicleScreen(): JSX.Element {
                             required
                             icon="calendar-today"
                             returnKeyType="next"
-                            onSubmitEditing={() => focusNextField(licensePlateRef)}
+                            onSubmitEditing={() => setVehicleTypeModalVisible(true)}
                             blurOnSubmit={false}
                             onFocus={() => scrollToInput(yearRef)}
                         />
 
-                        <InputField
-                            ref={licensePlateRef}
-                            label="License Plate"
-                            value={formData.licensePlate}
-                            onChangeText={(text) => handleInputChange("licensePlate", text)}
-                            placeholder="e.g. ABC123"
-                            icon="credit-card"
-                            returnKeyType="next"
-                            onSubmitEditing={() => focusNextField(tankCapacityRef)}
-                            blurOnSubmit={false}
-                            onFocus={() => scrollToInput(licensePlateRef)}
-                        />
+                        {/* Vehicle Type Dropdown */}
+                        <View style={styles(theme).inputContainer}>
+                            <View style={styles(theme).labelContainer}>
+                                <MaterialIcons
+                                    name="directions-car"
+                                    size={22}
+                                    color={theme.Colors.gray}
+                                />
+                                <Text style={[styles(theme).inputLabel, { color: theme.Colors.textPrimary }]}>
+                                    Vehicle Type
+                                    <Text style={styles(theme).required}>*</Text>
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles(theme).dropdownButton}
+                                onPress={() => {
+                                    Keyboard.dismiss();
+                                    setVehicleTypeModalVisible(true);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles(theme).dropdownButtonText}>
+                                    {VEHICLE_TYPE_LABELS[formData.vehicleType]}
+                                </Text>
+                                <MaterialIcons
+                                    name="keyboard-arrow-down"
+                                    size={24}
+                                    color={theme.Colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                        </View>
 
                         <InputField
                             ref={tankCapacityRef}
@@ -541,6 +398,7 @@ export default function EditVehicleScreen(): JSX.Element {
                             onSubmitEditing={() => Keyboard.dismiss()}
                         />
 
+                        {/* Fuel Type Dropdown */}
                         <View style={styles(theme).inputContainer}>
                             <View style={styles(theme).labelContainer}>
                                 <MaterialIcons
@@ -609,6 +467,17 @@ export default function EditVehicleScreen(): JSX.Element {
                 </ScrollView>
             </KeyboardAvoidingView>
 
+            {/* Vehicle Type Modal */}
+            <DropdownModal
+                visible={vehicleTypeModalVisible}
+                options={VEHICLE_TYPE_LABELS}
+                selectedValue={formData.vehicleType}
+                onSelect={(value) => handleInputChange("vehicleType", value)}
+                onClose={() => setVehicleTypeModalVisible(false)}
+                title="Select Vehicle Type"
+            />
+
+            {/* Fuel Type Modal */}
             <DropdownModal
                 visible={fuelTypeModalVisible}
                 options={FUEL_TYPES}
@@ -804,8 +673,7 @@ const styles = (theme: any) => StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        justifyContent: "flex-end",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "flex-end"
     },
     modalContent: {
         backgroundColor: theme.Colors.white,

@@ -1,5 +1,5 @@
 import { db } from '../connection';
-import {FuelType} from "@/types/vehicle";
+import {FuelType, vehicleType} from "@/types/vehicle";
 
 export interface Vehicle {
     id: number;
@@ -7,7 +7,7 @@ export interface Vehicle {
     make: string;
     model: string;
     year: number;
-    licensePlate?: string;
+    vehicleType: vehicleType;
     fuelType: FuelType;
     tankCapacity?: number;
     createdAt: string;
@@ -15,11 +15,12 @@ export interface Vehicle {
 }
 
 export interface CreateVehicleData {
+    id?: string;
     name: string;
     make: string;
     model: string;
     year: number;
-    licensePlate?: string;
+    vehicleType: string;
     fuelType: FuelType;
     tankCapacity?: number;
 }
@@ -29,14 +30,14 @@ export interface UpdateVehicleData {
     make?: string;
     model?: string;
     year?: number;
-    licensePlate?: string;
+    vehicleType: vehicleType;
     fuelType?: FuelType;
     tankCapacity?: number;
 }
 
 export async function createVehicle(vehicleData: CreateVehicleData): Promise<number> {
     const sql = `
-        INSERT INTO vehicles (name, make, model, year, license_plate, fuel_type, tank_capacity)
+        INSERT INTO vehicles (name, make, model, year, vehicle_type, fuel_type, tank_capacity)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     const params = [
@@ -44,7 +45,7 @@ export async function createVehicle(vehicleData: CreateVehicleData): Promise<num
         vehicleData.make,
         vehicleData.model,
         vehicleData.year,
-        vehicleData.licensePlate || null,
+        vehicleData.vehicleType,
         vehicleData.fuelType,
         vehicleData.tankCapacity || null
     ];
@@ -61,7 +62,7 @@ export async function findAllVehicles(): Promise<Vehicle[]> {
             make,
             model,
             year,
-            license_plate as licensePlate,
+            vehicle_type as vehicleType,
             fuel_type as fuelType,
             tank_capacity as tankCapacity,
             created_at as createdAt,
@@ -81,7 +82,7 @@ export async function findVehicleById(id: number): Promise<Vehicle | null> {
             make,
             model,
             year,
-            license_plate as licensePlate,
+            vehicle_type as vehicleType,
             fuel_type as fuelType,
             tank_capacity as tankCapacity,
             created_at as createdAt,
@@ -96,7 +97,15 @@ export async function findVehicleById(id: number): Promise<Vehicle | null> {
     return result.rows.item(0) as Vehicle;
 }
 
-export async function updateVehicle(id: number, vehicleData: UpdateVehicleData): Promise<void> {
+export async function updateVehicle(id: number, vehicleData: {
+    fuelType: FuelType;
+    make: string;
+    model: string;
+    name: string;
+    tankCapacity: number | undefined;
+    vehicleType: string;
+    year: number
+}): Promise<void> {
     const fields: string[] = [];
     const params: any[] = [];
 
@@ -116,9 +125,9 @@ export async function updateVehicle(id: number, vehicleData: UpdateVehicleData):
         fields.push('year = ?');
         params.push(vehicleData.year);
     }
-    if (vehicleData.licensePlate !== undefined) {
-        fields.push('license_plate = ?');
-        params.push(vehicleData.licensePlate);
+    if (vehicleData.vehicleType !== undefined) {
+        fields.push('vehicle_type = ?');
+        params.push(vehicleData.vehicleType);
     }
     if (vehicleData.fuelType !== undefined) {
         fields.push('fuel_type = ?');
@@ -159,13 +168,13 @@ export async function searchVehicles(searchTerm: string): Promise<Vehicle[]> {
             make,
             model,
             year,
-            license_plate as licensePlate,
+            vehicle_type as vehicleType,
             fuel_type as fuelType,
             tank_capacity as tankCapacity,
             created_at as createdAt,
             updated_at as updatedAt
         FROM vehicles
-        WHERE name LIKE ? OR make LIKE ? OR model LIKE ? OR license_plate LIKE ?
+        WHERE name LIKE ? OR make LIKE ? OR model LIKE ? OR vehicle_type LIKE ?
         ORDER BY created_at DESC
     `;
     const searchPattern = `%${searchTerm}%`;

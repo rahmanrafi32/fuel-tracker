@@ -54,7 +54,6 @@ async function runMigrations(fromVersion: number): Promise<void> {
         {
             version: 1,
             queries: [
-                // Vehicles table
                 `CREATE TABLE IF NOT EXISTS vehicles
                  (
                      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,14 +61,13 @@ async function runMigrations(fromVersion: number): Promise<void> {
                      make TEXT NOT NULL,
                      model TEXT NOT NULL,
                      year INTEGER NOT NULL,
-                     license_plate TEXT,
+                     vehicleType TEXT,
                      fuel_type TEXT NOT NULL DEFAULT 'petrol',
                      tank_capacity REAL,
                      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                  );`,
-
-                // Refuel logs table
+                
                 `CREATE TABLE IF NOT EXISTS refuel_logs
                  (
                      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,12 +85,10 @@ async function runMigrations(fromVersion: number): Promise<void> {
                      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                      FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
                  );`,
-
-                // Create indexes for better performance
+                
                 `CREATE INDEX IF NOT EXISTS idx_refuel_logs_vehicle_id ON refuel_logs(vehicle_id);`,
                 `CREATE INDEX IF NOT EXISTS idx_refuel_logs_date ON refuel_logs(date);`,
-
-                // Insert migration record
+                
                 `INSERT INTO migrations (version) VALUES (1);`
             ]
         },
@@ -106,7 +102,6 @@ async function runMigrations(fromVersion: number): Promise<void> {
                     volume_unit TEXT NOT NULL,
                     avg_consumption REAL NOT NULL
                 );`,
-                // Insert migration record
                 `INSERT INTO migrations (version) VALUES (2);`
             ]
         }
@@ -140,5 +135,4 @@ export async function addMigration(version: number, queries: string[]): Promise<
     }
 }
 
-// Export getCurrentVersion and runMigrations if needed elsewhere
 export { getCurrentVersion, runMigrations };

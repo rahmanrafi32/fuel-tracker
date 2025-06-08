@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import { openDatabaseSync, SQLiteDatabase } from 'expo-sqlite';
 
 type QueryResult<T = any> = {
     rows: T[];
@@ -11,9 +11,8 @@ type DatabaseQuery = {
     params?: any[];
 };
 
-const database: SQLite.SQLiteDatabase = SQLite.openDatabaseSync('fuel_tracker.db');
+const database: SQLiteDatabase = openDatabaseSync('fuel_tracker.db');
 
-// Initialize tables
 const initializeDatabase = async (): Promise<void> => {
     try {
         await database.execAsync(`
@@ -23,7 +22,7 @@ const initializeDatabase = async (): Promise<void> => {
                                                     make TEXT,
                                                     model TEXT,
                                                     year INTEGER,
-                                                    license_plate TEXT,
+                                                    vehicle_type TEXT,
                                                     fuel_type TEXT NOT NULL DEFAULT 'petrol',
                                                     tank_capacity REAL,
                                                     odometer_unit TEXT DEFAULT 'miles',
@@ -159,7 +158,6 @@ export const db = {
     executeTransaction,
 };
 
-// Also export as dbConnection for backward compatibility
 export const dbConnection = db;
 
 export type { QueryResult, DatabaseQuery };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {useCallback, useState} from 'react';
 import {
     View,
     StyleSheet,
@@ -10,21 +10,21 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native'; // Add this import
-import {useTheme} from "@/context/ThemeContext";
+import { useFocusEffect } from '@react-navigation/native';
+import { useTheme } from "@/context/ThemeContext";
 import { AppText } from '@/components/AppText';
 import { vehicles } from '@/config/Database';
-import {Vehicle} from "@/types/vehicle";
+import {CreateVehicleData} from "@/types/vehicle";
 
 export default function VehiclesScreen() {
     const { theme } = useTheme();
-    const [allVehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [allVehicles, setVehicles] = useState<CreateVehicleData[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
 
     const loadVehicles = async () => {
         try {
-            setLoading(true); // Show loading when refreshing
+            setLoading(true);
             const vehicleData = await vehicles.findAll();
             setVehicles(vehicleData);
         } catch (error) {
@@ -34,9 +34,8 @@ export default function VehiclesScreen() {
         }
     };
 
-    // Replace useEffect with useFocusEffect
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
             loadVehicles();
         }, [])
     );
@@ -60,9 +59,10 @@ export default function VehiclesScreen() {
             case 'truck':
                 return 'local-shipping';
             case 'suv':
+            case 'car':
                 return 'directions-car';
             default:
-                return 'two-wheeler';
+                return 'directions-car';
         }
     };
 
@@ -120,11 +120,13 @@ export default function VehiclesScreen() {
                                 activeOpacity={0.8}
                             >
                                 <View style={[styles(theme).iconCircle, { backgroundColor: getVehicleColor(index, theme) }]}>
-                                    <MaterialIcons name={getVehicleIcon(vehicle.type)} size={28} color="#fff" />
+                                    <MaterialIcons name={getVehicleIcon(vehicle.vehicleType)} size={28} color="#fff" />
                                 </View>
                                 <View style={styles(theme).info}>
                                     <AppText style={styles(theme).name}>{vehicle.name}</AppText>
-                                    <AppText style={styles(theme).details}>{vehicle.make} {vehicle.model}</AppText>
+                                    <AppText style={styles(theme).details}>
+                                        {vehicle.make} {vehicle.model}
+                                    </AppText>
                                     <View style={styles(theme).meta}>
                                         <AppText style={styles(theme).metaText}>{vehicle.year}</AppText>
                                         <AppText style={styles(theme).metaDot}>·</AppText>
@@ -265,4 +267,4 @@ const styles = (theme: any) => StyleSheet.create({
         fontSize: 32,
         color: theme.Colors.white,
     },
-})
+});
