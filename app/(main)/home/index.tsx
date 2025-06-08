@@ -45,7 +45,7 @@ interface EntryCardProps {
 }
 
 export default function FuelLogScreen(): JSX.Element {
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
     const router = useRouter();
 
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
@@ -153,8 +153,7 @@ export default function FuelLogScreen(): JSX.Element {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    // This effect will run every time the screen comes into focus
+    
     useFocusEffect(
         useCallback(() => {
             fetchVehicles();
@@ -690,7 +689,7 @@ const styles = (theme: any) => StyleSheet.create({
         borderRadius: theme.BorderRadius.lg,
         padding: theme.Spacing.lg,
         width: '80%',
-        maxWidth: 300,
+        maxWidth: 350,
         shadowColor: theme.Colors.black,
         shadowOpacity: 0.2,
         shadowRadius: 10,
