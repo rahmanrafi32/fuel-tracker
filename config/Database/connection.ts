@@ -51,6 +51,16 @@ const initializeDatabase = async (): Promise<void> => {
                 FOREIGN KEY (vehicle_id) REFERENCES vehicles (id) ON DELETE CASCADE
                 );
         `);
+        
+        await database.execAsync(`
+            CREATE TABLE IF NOT EXISTS settings (
+                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                    currency_code TEXT NOT NULL,
+                                                    distance_unit TEXT NOT NULL,
+                                                    volume_unit TEXT NOT NULL,
+                                                    avg_consumption REAL NOT NULL
+            );
+        `);
 
         // Create indexes for better performance
         await database.execAsync(`

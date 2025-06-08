@@ -2,6 +2,7 @@ import * as DatabaseMigrations from './migration';
 import * as VehicleModel from './models/vehicle';
 import * as RefuelModel from './models/refuel';
 import * as RefuelQueries from './queries/refuel';
+import * as SettingsModel from './models/settings'; 
 
 let initialized = false;
 
@@ -40,6 +41,12 @@ export const refuels = {
     getLastForVehicle: RefuelModel.getLastRefuelForVehicle,
 };
 
+export const settings = {
+    insert: SettingsModel.insertSettings,
+    get: SettingsModel.getSettings,
+    update: SettingsModel.updateSettings,
+};
+
 // Query operations for statistics and analytics
 export const queries = {
     getOverallStatistics: RefuelQueries.getOverallStatistics,
@@ -60,7 +67,6 @@ export const migrations = {
     runMigrations: DatabaseMigrations.runMigrations,
 };
 
-// Re-export types for convenience
 export type {
     Vehicle,
     CreateVehicleData,
@@ -79,17 +85,18 @@ export type {
     MonthlyRefuelData
 } from './queries/refuel';
 
+export type {
+    Settings
+} from './models/settings';
+
 // Re-export connection types
 export type { QueryResult, DatabaseQuery } from './connection';
 
-// Initialize database when module is imported (optional - you might want to call this manually)
-// initializeDatabase().catch(console.error);
-
-// Default export for convenience
 export default {
     initializeDatabase,
     vehicles,
     refuels,
+    settings,
     queries,
     migrations,
 };

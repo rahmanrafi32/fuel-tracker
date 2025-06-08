@@ -1,6 +1,6 @@
 import { db } from './connection';
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 export async function initializeMigrations(): Promise<void> {
     try {
@@ -94,6 +94,20 @@ async function runMigrations(fromVersion: number): Promise<void> {
 
                 // Insert migration record
                 `INSERT INTO migrations (version) VALUES (1);`
+            ]
+        },
+        {
+            version: 2,
+            queries: [
+                `CREATE TABLE IF NOT EXISTS settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    currency_code TEXT NOT NULL,
+                    distance_unit TEXT NOT NULL,
+                    volume_unit TEXT NOT NULL,
+                    avg_consumption REAL NOT NULL
+                );`,
+                // Insert migration record
+                `INSERT INTO migrations (version) VALUES (2);`
             ]
         }
     ];
