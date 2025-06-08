@@ -546,7 +546,7 @@ export default function EditVehicleScreen(): JSX.Element {
                                 <MaterialIcons
                                     name="local-gas-station"
                                     size={22}
-                                    color={theme.Colors.textSecondary}
+                                    color={theme.Colors.gray}
                                 />
                                 <Text style={[styles(theme).inputLabel, { color: theme.Colors.textPrimary }]}>
                                     Fuel Type
@@ -671,6 +671,7 @@ const styles = (theme: any) => StyleSheet.create({
     },
     formWrapper: {
         flex: 1,
+        backgroundColor: theme.Colors.white,
     },
     formContainer: {
         flex: 1,
@@ -700,8 +701,8 @@ const styles = (theme: any) => StyleSheet.create({
         marginLeft: 2,
     },
     inputWrapper: {
-        borderWidth: 2,
-        borderColor: "#e2e8f0",
+        borderWidth: 1.5,
+        borderColor: theme.Colors.gray,
         borderRadius: theme.BorderRadius.md,
         backgroundColor: theme.Colors.white,
         minHeight: 56,
@@ -733,8 +734,8 @@ const styles = (theme: any) => StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        borderWidth: 2,
-        borderColor: "#e2e8f0",
+        borderWidth: 1.5,
+        borderColor: theme.Colors.gray,
         borderRadius: theme.BorderRadius.md,
         paddingHorizontal: theme.Spacing.md,
         paddingVertical: theme.Spacing.md,
@@ -837,17 +838,14 @@ const styles = (theme: any) => StyleSheet.create({
     },
     closeButton: {
         padding: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm,
-        backgroundColor: theme.Colors.background,
+        borderRadius: theme.BorderRadius.sm
     },
     modalOption: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: theme.Spacing.md,
-        paddingVertical: theme.Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f8fafc",
+        paddingVertical: theme.Spacing.md
     },
     selectedOption: {
         backgroundColor: `${theme.Colors.primary}20`,
