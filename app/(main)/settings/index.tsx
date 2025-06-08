@@ -50,40 +50,41 @@ export default function ProfileSettingsScreen() {
             toggleValue: isDark,
             onToggle: handleDarkModeToggle,
         },
-        {
-            id: 3,
-            title: 'Settings',
-            icon: 'settings-outline',
-            onPress: () => console.log('Settings pressed'),
-        }
+        // {
+        //     id: 3,
+        //     title: 'Settings',
+        //     icon: 'settings-outline',
+        //     onPress: () => console.log('Settings pressed'),
+        // }
     ];
 
-    const bottomMenuItems: MenuItem[] = [
-        {
-            id: 4,
-            title: 'Help in translations',
-            icon: 'language-outline',
-            onPress: () => console.log('Help in translations pressed'),
-        },
-        {
-            id: 5,
-            title: 'Privacy policy',
-            icon: 'shield-checkmark-outline',
-            onPress: () => console.log('Privacy policy pressed'),
-        },
-        {
-            id: 6,
-            title: 'Rate',
-            icon: 'star-outline',
-            onPress: () => console.log('Rate pressed'),
-        },
-        {
-            id: 7,
-            title: 'About',
-            icon: 'information-circle-outline',
-            onPress: () => console.log('About pressed'),
-        },
-    ];
+    // will integrate later. 
+    // const bottomMenuItems: MenuItem[] = [
+    //     {
+    //         id: 4,
+    //         title: 'Help in translations',
+    //         icon: 'language-outline',
+    //         onPress: () => console.log('Help in translations pressed'),
+    //     },
+    //     {
+    //         id: 5,
+    //         title: 'Privacy policy',
+    //         icon: 'shield-checkmark-outline',
+    //         onPress: () => console.log('Privacy policy pressed'),
+    //     },
+    //     {
+    //         id: 6,
+    //         title: 'Rate',
+    //         icon: 'star-outline',
+    //         onPress: () => console.log('Rate pressed'),
+    //     },
+    //     {
+    //         id: 7,
+    //         title: 'About',
+    //         icon: 'information-circle-outline',
+    //         onPress: () => console.log('About pressed'),
+    //     },
+    // ];
 
     const renderMenuItem = (item: MenuItem) => (
         <TouchableOpacity
