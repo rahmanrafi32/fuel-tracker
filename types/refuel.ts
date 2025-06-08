@@ -14,10 +14,6 @@ export interface RefuelLog {
     isFullTank: boolean;
     createdAt: string;
     updatedAt: string;
-    // Joined fields from vehicle table
-    vehicleName?: string;
-    vehicleMake?: string;
-    vehicleModel?: string;
 }
 
 export interface CreateRefuelLogData {
@@ -58,7 +54,7 @@ export interface RefuelFormData {
 
 export interface RefuelListItem extends RefuelLog {
     distanceTraveled?: number;
-    efficiency?: number; // km per liter
+    efficiency?: number;
     daysSinceLastRefuel?: number;
 }
 
