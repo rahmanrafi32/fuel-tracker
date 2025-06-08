@@ -8,7 +8,12 @@ import {
     ScrollView,
     Switch,
     Modal,
-    Alert
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    ActivityIndicator,
 } from 'react-native';
 import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
 import {MaterialIcons, Ionicons} from '@expo/vector-icons';
@@ -30,7 +35,7 @@ interface DropdownModalProps {
 }
 
 type RouteParams = {
-    editFuel: { 
+    editFuel: {
         entryId: string | number;
     };
 };
@@ -61,7 +66,12 @@ export default function EditFuelEntryScreen() {
 
     const distanceUnits: DistanceUnit[] = ['KM', 'Miles'];
     const volumeUnits: VolumeUnit[] = ['L', 'Gallon (US)', 'Gallon (UK)'];
-    
+
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState<'success' | 'error'>('success');
+
     useEffect(() => {
         if (entryId) {
             loadEntryData();
@@ -75,7 +85,7 @@ export default function EditFuelEntryScreen() {
         try {
             setIsLoading(true);
             setLoadError(null);
-            
+
             const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
             const entry = await refuels.findById(id);
 
@@ -86,16 +96,20 @@ export default function EditFuelEntryScreen() {
                 setFuelUnitPrice((entry.cost / entry.liters).toFixed(2));
                 setNotes(entry.notes || '');
                 setFullTank(entry.isFullTank || false);
-                
+
             } else {
                 setLoadError('Entry not found');
-                Alert.alert('Error', 'Entry not found');
-                navigation.goBack();
+                setAlertTitle('Error');
+                setAlertMessage('Entry not found');
+                setAlertType('error');
+                setAlertVisible(true);
             }
         } catch (error: any) {
             setLoadError(`Failed to load entry: ${error.message}`);
-            Alert.alert('Error', 'Failed to load entry data');
-            navigation.goBack();
+            setAlertTitle('Error');
+            setAlertMessage('Failed to load entry data');
+            setAlertType('error');
+            setAlertVisible(true);
         } finally {
             setIsLoading(false);
         }
@@ -107,9 +121,9 @@ export default function EditFuelEntryScreen() {
 
         // Convert volume to liters
         if (volumeUnit === 'Gallon (US)') {
-            liters = liters * 3.78541; 
+            liters = liters * 3.78541;
         } else if (volumeUnit === 'Gallon (UK)') {
-            liters = liters * 4.54609; 
+            liters = liters * 4.54609;
         }
 
         // Convert distance to kilometers (if needed)
@@ -129,7 +143,7 @@ export default function EditFuelEntryScreen() {
             const totalCost = liters * Number(fuelUnitPrice);
 
             const updateData: UpdateRefuelLogData = {
-                date: fuelDate.toISOString().split('T')[0], 
+                date: fuelDate.toISOString().split('T')[0],
                 odometer: odometerReading,
                 liters: liters,
                 cost: totalCost,
@@ -137,31 +151,22 @@ export default function EditFuelEntryScreen() {
                 notes: notes.trim() || undefined,
                 isFullTank: fullTank
             };
-            
+
             const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
-            
+
             await refuels.update(id, updateData);
-            
-            Alert.alert(
-                'Success',
-                'Entry updated successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            navigation.goBack();
-                        }
-                    }
-                ]
-            );
+
+            setAlertTitle('Success');
+            setAlertMessage('Entry updated successfully!');
+            setAlertType('success');
+            setAlertVisible(true);
 
         } catch (error) {
             console.error('Error updating refuel data:', error);
-            Alert.alert(
-                'Error',
-                'Failed to update entry. Please try again.',
-                [{ text: 'OK' }]
-            );
+            setAlertTitle('Error');
+            setAlertMessage('Failed to update entry. Please try again.');
+            setAlertType('error');
+            setAlertVisible(true);
         } finally {
             setIsSaving(false);
         }
@@ -190,26 +195,18 @@ export default function EditFuelEntryScreen() {
             setIsDeleting(true);
             const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
             await refuels.delete(id);
-            Alert.alert(
-                'Success',
-                'Entry deleted successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            navigation.goBack();
-                        }
-                    }
-                ]
-            );
+
+            setAlertTitle('Success');
+            setAlertMessage('Entry deleted successfully!');
+            setAlertType('success');
+            setAlertVisible(true);
 
         } catch (error) {
             console.error('Error deleting refuel data:', error);
-            Alert.alert(
-                'Error',
-                'Failed to delete entry. Please try again.',
-                [{ text: 'OK' }]
-            );
+            setAlertTitle('Error');
+            setAlertMessage('Failed to delete entry. Please try again.');
+            setAlertType('error');
+            setAlertVisible(true);
         } finally {
             setIsDeleting(false);
         }
@@ -243,7 +240,7 @@ export default function EditFuelEntryScreen() {
                                                              title
                                                          }) => (
         <Modal visible={visible} transparent animationType="fade">
-            <TouchableOpacity style={styles(theme).modalOverlay} onPress={onClose}>
+            <TouchableOpacity style={styles(theme).modalOverlay} onPress={onClose} activeOpacity={1}>
                 <View style={styles(theme).dropdownModal}>
                     <Text style={styles(theme).dropdownTitle}>{title}</Text>
                     {options.map((option: string) => (
@@ -273,234 +270,337 @@ export default function EditFuelEntryScreen() {
             </TouchableOpacity>
         </Modal>
     );
-    
+
+    const CustomAlertModal = () => (
+        <Modal visible={alertVisible} transparent animationType="fade">
+            <View style={styles(theme).alertOverlay}>
+                <View
+                    style={[
+                        styles(theme).alertContainer,
+                        alertType === 'success'
+                            ? { borderColor: theme.Colors.costGreen }
+                            : { borderColor: theme.Colors.error },
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles(theme).alertTitle,
+                            alertType === 'success'
+                                ? { color: theme.Colors.costGreen }
+                                : { color: theme.Colors.error },
+                        ]}
+                    >
+                        {alertTitle}
+                    </Text>
+                    <Text style={styles(theme).alertMessage}>{alertMessage}</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles(theme).alertButton,
+                            alertType === 'success'
+                                ? { backgroundColor: theme.Colors.costGreen }
+                                : { backgroundColor: theme.Colors.error },
+                        ]}
+                        onPress={() => {
+                            setAlertVisible(false);
+                            if (alertType === 'success') {
+                                handleBack();
+                            }
+                        }}
+                    >
+                        <Text style={styles(theme).alertButtonText}>OK</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+
     if (isLoading) {
         return (
-            <View style={[styles(theme).container, styles(theme).centerContent]}>
-                <Text>Loading entry {entryId}...</Text>
-                {loadError && <Text style={{color: 'red', marginTop: 10}}>{loadError}</Text>}
-            </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1, backgroundColor: theme.Colors.background }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+            >
+                {/* Header */}
+                <View style={styles(theme).header}>
+                    <TouchableOpacity onPress={handleBack} style={styles(theme).headerBackButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles(theme).headerTitle}>Edit Fuel</Text>
+                    <View style={styles(theme).headerPlaceholder} />
+                </View>
+
+                <View style={[styles(theme).container, styles(theme).centerContent]}>
+                    <ActivityIndicator size="large" color={theme.Colors.primary} />
+                    <Text style={styles(theme).loadingText}>Loading entry...</Text>
+                    {loadError && <Text style={styles(theme).errorText}>{loadError}</Text>}
+                </View>
+            </KeyboardAvoidingView>
         );
     }
 
-    // Show error state if there's an issue
     if (loadError) {
         return (
-            <View style={[styles(theme).container, styles(theme).centerContent]}>
-                <Text style={{color: 'red', textAlign: 'center', marginBottom: 20}}>
-                    Error: {loadError}
-                </Text>
-                <TouchableOpacity
-                    style={styles(theme).backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Text>Go Back</Text>
-                </TouchableOpacity>
-            </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1, backgroundColor: theme.Colors.background }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+            >
+                {/* Header */}
+                <View style={styles(theme).header}>
+                    <TouchableOpacity onPress={handleBack} style={styles(theme).headerBackButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles(theme).headerTitle}>Edit Fuel</Text>
+                    <View style={styles(theme).headerPlaceholder} />
+                </View>
+
+                <View style={[styles(theme).container, styles(theme).centerContent]}>
+                    <Text style={styles(theme).errorText}>Error: {loadError}</Text>
+                </View>
+            </KeyboardAvoidingView>
         );
     }
 
     return (
-        <ScrollView contentContainerStyle={styles(theme).container}>
-            <View style={styles(theme).form}>
-                {/* Date Picker */}
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles(theme).fieldRow}>
-                    <View style={styles(theme).iconContainer}>
-                        <Ionicons name="calendar" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles(theme).fieldContent}>
-                        <Text style={styles(theme).label}>Fueling date</Text>
-                        <View style={styles(theme).dateDisplay}>
-                            <Text style={styles(theme).dateValue}>{formatDate(fuelDate)}</Text>
-                            <Ionicons name="chevron-down" size={16} color={theme.Colors.gray}/>
-                        </View>
-                    </View>
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: theme.Colors.background }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
+        >
+            {/* Header - Only Back Button and Title */}
+            <View style={styles(theme).header}>
+                <TouchableOpacity onPress={handleBack} style={styles(theme).headerBackButton}>
+                    <Ionicons name="arrow-back" size={24} color={theme.Colors.primary} />
                 </TouchableOpacity>
-
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={fuelDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleDateChange}
-                    />
-                )}
-
-                {/* Odometer */}
-                <View style={styles(theme).fieldRow}>
-                    <View style={styles(theme).iconContainer}>
-                        <MaterialIcons name="speed" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles(theme).fieldContent}>
-                        <Text style={styles(theme).label}>Current odometer</Text>
-                        <View style={styles(theme).inputRow}>
-                            <TextInput
-                                placeholder="Enter reading"
-                                placeholderTextColor={theme.Colors.textSecondary}
-                                style={styles(theme).input}
-                                keyboardType="numeric"
-                                value={odometer}
-                                onChangeText={(text: string) => setOdometer(text)}
-                            />
-                            <TouchableOpacity
-                                style={styles(theme).unitSelector}
-                                onPress={() => setShowDistanceDropdown(true)}
-                            >
-                                <Text style={styles(theme).unitText}>{distanceUnit}</Text>
-                                <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Fuel Volume */}
-                <View style={styles(theme).fieldRow}>
-                    <View style={styles(theme).iconContainer}>
-                        <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles(theme).fieldContent}>
-                        <Text style={styles(theme).label}>Fuel volume</Text>
-                        <View style={styles(theme).inputRow}>
-                            <TextInput
-                                placeholder="Enter volume"
-                                placeholderTextColor={theme.Colors.textSecondary}
-                                style={styles(theme).input}
-                                keyboardType="numeric"
-                                value={fuelVolume}
-                                onChangeText={(text: string) => setFuelVolume(text)}
-                            />
-                            <TouchableOpacity
-                                style={styles(theme).unitSelector}
-                                onPress={() => setShowVolumeDropdown(true)}
-                            >
-                                <Text style={styles(theme).unitText}>{volumeUnit}</Text>
-                                <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Fuel Unit Price */}
-                <View style={styles(theme).fieldRow}>
-                    <View style={styles(theme).iconContainer}>
-                        <Ionicons name="pricetag" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles(theme).fieldContent}>
-                        <Text style={styles(theme).label}>Fuel unit price</Text>
-                        <TextInput
-                            placeholder="Price per unit"
-                            placeholderTextColor={theme.Colors.textSecondary}
-                            style={styles(theme).input}
-                            keyboardType="numeric"
-                            value={fuelUnitPrice}
-                            onChangeText={(text: string) => setFuelUnitPrice(text)}
-                        />
-                    </View>
-                </View>
-
-                {/* Notes */}
-                <View style={styles(theme).fieldRow}>
-                    <View style={styles(theme).iconContainer}>
-                        <Ionicons name="document-text" size={20} color={theme.Colors.primary}/>
-                    </View>
-                    <View style={styles(theme).fieldContent}>
-                        <Text style={styles(theme).label}>Notes</Text>
-                        <TextInput
-                            placeholder="Add any notes..."
-                            placeholderTextColor={theme.Colors.textSecondary}
-                            style={[styles(theme).input, styles(theme).multilineInput]}
-                            value={notes}
-                            onChangeText={(text: string) => setNotes(text)}
-                            multiline
-                            numberOfLines={3}
-                        />
-                    </View>
-                </View>
-
-                {/* Switches */}
-                <View style={styles(theme).switchSection}>
-                    <View style={styles(theme).switchRow}>
-                        <View style={styles(theme).switchContent}>
-                            <Ionicons name="car" size={18} color={theme.Colors.gray} style={styles(theme).switchIcon}/>
-                            <Text style={styles(theme).switchLabel}>Full tank</Text>
-                        </View>
-                        <Switch
-                            value={fullTank}
-                            onValueChange={(value: boolean) => setFullTank(value)}
-                            trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
-                            thumbColor={fullTank ? theme.Colors.white : theme.Colors.background}
-                        />
-                    </View>
-
-                    <View style={styles(theme).switchRow}>
-                        <View style={styles(theme).switchContent}>
-                            <Ionicons name="alert-circle" size={18} color={theme.Colors.gray}
-                                      style={styles(theme).switchIcon}/>
-                            <Text style={styles(theme).switchLabel}>Previous fuelling missed</Text>
-                        </View>
-                        <Switch
-                            value={missedLastFuel}
-                            onValueChange={(value: boolean) => setMissedLastFuel(value)}
-                            trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
-                            thumbColor={missedLastFuel ? theme.Colors.white : theme.Colors.background}
-                        />
-                    </View>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles(theme).buttonContainer}>
-                    <TouchableOpacity
-                        style={styles(theme).backButton}
-                        onPress={handleBack}
-                        disabled={isSaving || isDeleting}
-                    >
-                        <Ionicons name="arrow-back" size={16} color={theme.Colors.primary}/>
-                        <Text style={styles(theme).backButtonText}>BACK</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles(theme).deleteButton}
-                        onPress={handleDelete}
-                        disabled={isSaving || isDeleting}
-                    >
-                        <Ionicons name="trash" size={16} color={theme.Colors.white}/>
-                        <Text style={styles(theme).deleteButtonText}>
-                            {isDeleting ? 'DELETING...' : 'DELETE'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles(theme).editButton}
-                        onPress={handleEdit}
-                        disabled={isSaving || isDeleting}
-                    >
-                        <Ionicons name="checkmark-circle" size={16} color={theme.Colors.white}/>
-                        <Text style={styles(theme).editButtonText}>
-                            {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                <Text style={styles(theme).headerTitle}>Edit Fuel</Text>
+                <View style={styles(theme).headerPlaceholder} />
             </View>
 
-            {/* Dropdowns */}
-            <DropdownModal
-                visible={showDistanceDropdown}
-                options={distanceUnits}
-                selectedValue={distanceUnit}
-                onSelect={(value: string) => setDistanceUnit(value as DistanceUnit)}
-                onClose={() => setShowDistanceDropdown(false)}
-                title="Select Distance Unit"
-            />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles(theme).container}
+                >
+                    {/* Date Picker */}
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
+                            <Ionicons name="calendar" size={20} color={theme.Colors.primary}/>
+                        </View>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fueling date</Text>
+                            <View style={styles(theme).dateDisplay}>
+                                <Text style={styles(theme).dateValue}>{formatDate(fuelDate)}</Text>
+                                <Ionicons name="chevron-down" size={16} color={theme.Colors.gray}/>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
 
-            <DropdownModal
-                visible={showVolumeDropdown}
-                options={volumeUnits}
-                selectedValue={volumeUnit}
-                onSelect={(value: string) => setVolumeUnit(value as VolumeUnit)}
-                onClose={() => setShowVolumeDropdown(false)}
-                title="Select Volume Unit"
-            />
-        </ScrollView>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={fuelDate}
+                            mode="date"
+                            display="default"
+                            onChange={handleDateChange}
+                        />
+                    )}
+
+                    {/* Odometer */}
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
+                            <MaterialIcons name="speed" size={20} color={theme.Colors.primary}/>
+                        </View>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Current odometer</Text>
+                            <View style={styles(theme).inputRow}>
+                                <TextInput
+                                    placeholder="Enter reading"
+                                    placeholderTextColor={theme.Colors.textSecondary}
+                                    style={styles(theme).input}
+                                    keyboardType="numeric"
+                                    value={odometer}
+                                    onChangeText={(text: string) => setOdometer(text)}
+                                    returnKeyType="done"
+                                />
+                                <TouchableOpacity
+                                    style={styles(theme).unitSelector}
+                                    onPress={() => setShowDistanceDropdown(true)}
+                                >
+                                    <Text style={styles(theme).unitText}>{distanceUnit}</Text>
+                                    <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Fuel Volume */}
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
+                            <MaterialIcons name="local-gas-station" size={20} color={theme.Colors.primary}/>
+                        </View>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fuel volume</Text>
+                            <View style={styles(theme).inputRow}>
+                                <TextInput
+                                    placeholder="Enter volume"
+                                    placeholderTextColor={theme.Colors.textSecondary}
+                                    style={styles(theme).input}
+                                    keyboardType="numeric"
+                                    value={fuelVolume}
+                                    onChangeText={(text: string) => setFuelVolume(text)}
+                                    returnKeyType="done"
+                                />
+                                <TouchableOpacity
+                                    style={styles(theme).unitSelector}
+                                    onPress={() => setShowVolumeDropdown(true)}
+                                >
+                                    <Text style={styles(theme).unitText}>{volumeUnit}</Text>
+                                    <Ionicons name="chevron-down" size={14} color={theme.Colors.white}/>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Fuel Unit Price */}
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
+                            <Ionicons name="pricetag" size={20} color={theme.Colors.primary}/>
+                        </View>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Fuel unit price</Text>
+                            <TextInput
+                                placeholder="Price per unit"
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={styles(theme).input}
+                                keyboardType="numeric"
+                                value={fuelUnitPrice}
+                                onChangeText={(text: string) => setFuelUnitPrice(text)}
+                                returnKeyType="done"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Notes */}
+                    <View style={styles(theme).fieldRow}>
+                        <View style={styles(theme).iconContainer}>
+                            <Ionicons name="document-text" size={20} color={theme.Colors.primary}/>
+                        </View>
+                        <View style={styles(theme).fieldContent}>
+                            <Text style={styles(theme).label}>Notes</Text>
+                            <TextInput
+                                placeholder="Add any notes..."
+                                placeholderTextColor={theme.Colors.textSecondary}
+                                style={[styles(theme).input, styles(theme).multilineInput]}
+                                value={notes}
+                                onChangeText={(text: string) => setNotes(text)}
+                                multiline
+                                numberOfLines={3}
+                                returnKeyType="done"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Switches */}
+                    <View style={styles(theme).switchSection}>
+                        <View style={styles(theme).switchRow}>
+                            <View style={styles(theme).switchContent}>
+                                <Ionicons name="car" size={18} color={theme.Colors.gray} style={styles(theme).switchIcon}/>
+                                <Text style={styles(theme).switchLabel}>Full tank</Text>
+                            </View>
+                            <Switch
+                                value={fullTank}
+                                onValueChange={(value: boolean) => setFullTank(value)}
+                                trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
+                                thumbColor={fullTank ? theme.Colors.white : theme.Colors.background}
+                            />
+                        </View>
+
+                        <View style={styles(theme).switchRow}>
+                            <View style={styles(theme).switchContent}>
+                                <Ionicons name="alert-circle" size={18} color={theme.Colors.gray}
+                                          style={styles(theme).switchIcon}/>
+                                <Text style={styles(theme).switchLabel}>Previous fuelling missed</Text>
+                            </View>
+                            <Switch
+                                value={missedLastFuel}
+                                onValueChange={(value: boolean) => setMissedLastFuel(value)}
+                                trackColor={{false: theme.Colors.gray, true: theme.Colors.primary}}
+                                thumbColor={missedLastFuel ? theme.Colors.white : theme.Colors.background}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Bottom Button Container - Save Changes and Delete */}
+                    <View style={styles(theme).buttonContainer}>
+                        <TouchableOpacity
+                            style={styles(theme).deleteButton}
+                            onPress={handleDelete}
+                            disabled={isSaving || isDeleting}
+                        >
+                            <Ionicons
+                                name="trash"
+                                size={20}
+                                color={theme.Colors.white}
+                                style={styles(theme).buttonIcon}
+                            />
+                            <Text style={styles(theme).deleteButtonText}>
+                                {isDeleting ? 'DELETING...' : 'DELETE'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles(theme).saveButton}
+                            onPress={handleEdit}
+                            disabled={isSaving || isDeleting}
+                        >
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={20}
+                                color={theme.Colors.white}
+                                style={styles(theme).buttonIcon}
+                            />
+                            <Text style={styles(theme).saveButtonText}>
+                                {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Dropdowns */}
+                    <DropdownModal
+                        visible={showDistanceDropdown}
+                        options={distanceUnits}
+                        selectedValue={distanceUnit}
+                        onSelect={(value: string) => setDistanceUnit(value as DistanceUnit)}
+                        onClose={() => setShowDistanceDropdown(false)}
+                        title="Select Distance Unit"
+                    />
+
+                    <DropdownModal
+                        visible={showVolumeDropdown}
+                        options={volumeUnits}
+                        selectedValue={volumeUnit}
+                        onSelect={(value: string) => setVolumeUnit(value as VolumeUnit)}
+                        onClose={() => setShowVolumeDropdown(false)}
+                        title="Select Volume Unit"
+                    />
+                </ScrollView>
+            </TouchableWithoutFeedback>
+
+            {/* Loading overlay */}
+            {(isSaving || isDeleting) && (
+                <Modal transparent animationType="fade">
+                    <View style={styles(theme).loadingOverlay}>
+                        <ActivityIndicator size="large" color={theme.Colors.primary} />
+                        <Text style={styles(theme).loadingText}>
+                            {isSaving ? 'Saving...' : 'Deleting...'}
+                        </Text>
+                    </View>
+                </Modal>
+            )}
+
+            {/* Custom Alert Modal */}
+            <CustomAlertModal />
+        </KeyboardAvoidingView>
     );
 }
 
@@ -728,5 +828,113 @@ const styles = (theme: any) => StyleSheet.create({
     selectedOptionText: {
         color: theme.Colors.primary,
         fontWeight: theme.FontWeight.medium,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: theme.Spacing.lg,
+        paddingVertical: theme.Spacing.md,
+        backgroundColor: theme.Colors.background,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    headerBackButton: {
+        padding: theme.Spacing.sm,
+        borderRadius: theme.BorderRadius.sm,
+    },
+    headerTitle: {
+        fontSize: theme.FontSizes.xl,
+        fontWeight: theme.FontWeight.bold,
+        color: theme.Colors.primary,
+    },
+    headerPlaceholder: {
+        width: 40,
+    },
+    loadingText: {
+        fontSize: theme.FontSizes.medium,
+        color: theme.Colors.textSecondary,
+        marginTop: theme.Spacing.sm,
+        textAlign: 'center',
+    },
+    errorText: {
+        fontSize: theme.FontSizes.medium,
+        color: theme.Colors.error,
+        textAlign: 'center',
+        marginTop: theme.Spacing.sm,
+    },
+    saveButton: {
+        backgroundColor: theme.Colors.primary,
+        paddingVertical: theme.Spacing.md,
+        paddingHorizontal: theme.Spacing.xl,
+        borderRadius: theme.BorderRadius.md,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        minWidth: 200,
+        shadowColor: theme.Colors.primary,
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 4,
+    },
+    saveButtonText: {
+        color: theme.Colors.white,
+        fontWeight: theme.FontWeight.bold,
+        fontSize: theme.FontSizes.small,
+        marginLeft: 4,
+    },
+    buttonIcon: {
+        marginRight: theme.Spacing.xs,
+    },
+    loadingOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    alertOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: theme.Spacing.lg,
+    },
+    alertContainer: {
+        backgroundColor: theme.Colors.cardBackground,
+        borderRadius: theme.BorderRadius.lg,
+        padding: theme.Spacing.lg,
+        width: '80%',
+        maxWidth: 300,
+        shadowColor: theme.Colors.black,
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        shadowOffset: {width: 0, height: 5},
+        elevation: 10,
+        borderWidth: 2,
+    },
+    alertTitle: {
+        fontSize: theme.FontSizes.large,
+        fontWeight: theme.FontWeight.bold,
+        textAlign: 'center',
+        marginBottom: theme.Spacing.sm,
+    },
+    alertMessage: {
+        fontSize: theme.FontSizes.medium,
+        color: theme.Colors.textSecondary,
+        textAlign: 'center',
+        marginBottom: theme.Spacing.lg,
+        lineHeight: 20,
+    },
+    alertButton: {
+        paddingVertical: theme.Spacing.sm,
+        paddingHorizontal: theme.Spacing.lg,
+        borderRadius: theme.BorderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    alertButtonText: {
+        color: theme.Colors.white,
+        fontWeight: theme.FontWeight.bold,
+        fontSize: theme.FontSizes.medium,
     },
 });

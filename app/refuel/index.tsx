@@ -503,7 +503,7 @@ const styles = (theme: any) => StyleSheet.create({
         color: theme.Colors.primary,
     },
     headerPlaceholder: {
-        width: 40, // Same width as back button for centering
+        width: 40,
     },
     fieldRow: {
         flexDirection: 'row',
