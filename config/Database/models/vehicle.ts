@@ -26,13 +26,13 @@ export interface CreateVehicleData {
 }
 
 export interface UpdateVehicleData {
-    name?: string;
-    make?: string;
-    model?: string;
-    year?: number;
+    name: string;
+    make: string;
+    model: string;
+    year: string;
     vehicleType: vehicleType;
-    fuelType?: FuelType;
-    tankCapacity?: number;
+    fuelType: FuelType;
+    tankCapacity: string;
 }
 
 export async function createVehicle(vehicleData: CreateVehicleData): Promise<number> {

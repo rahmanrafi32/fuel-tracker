@@ -17,7 +17,7 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
-import { findVehicleById, updateVehicle, deleteVehicle } from "@/config/Database/models/vehicle";
+import {findVehicleById, updateVehicle, deleteVehicle, UpdateVehicleData} from "@/config/Database/models/vehicle";
 import { FUEL_TYPES, FuelType, VEHICLE_TYPE_LABELS, VehicleFormData } from "@/types/vehicle";
 import VehicleInputField from "@/components/VehicleInputField";
 import VehicleDropDownModal from "@/components/VehicleDropDownModal";
@@ -28,7 +28,7 @@ export default function EditVehicleScreen(): JSX.Element {
     const { id } = useLocalSearchParams<{ id: string }>();
 
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState<VehicleFormData>({
+    const [formData, setFormData] = useState<UpdateVehicleData>({
         name: "",
         make: "",
         model: "",
