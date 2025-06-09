@@ -1,9 +1,12 @@
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from "react";
-import { initializeDatabase } from "@/config/Database";
-import { View, ActivityIndicator } from "react-native";
-import { AppText } from "@/components/AppText";
+import { useEffect, useState } from 'react';
+import { initializeDatabase } from '@/config/Database';
+import { View, ActivityIndicator } from 'react-native';
+import { AppText } from '@/components/AppText';
 import theme from '@/Themes';
+import { enableScreens } from 'react-native-screens';
+
+enableScreens();
 
 export default function Index() {
     const [isDbReady, setIsDbReady] = useState(false);
@@ -21,7 +24,7 @@ export default function Index() {
             }
         };
 
-        setupDatabase().then();
+        setupDatabase();
     }, []);
     
     if (!isDbReady) {
