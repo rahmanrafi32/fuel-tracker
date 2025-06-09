@@ -5,7 +5,7 @@ export interface Settings {
     currencyCode: string;
     distanceUnit: string;
     volumeUnit: string;
-    avgConsumption: number;
+    avgConsumption: string;
 }
 
 export async function insertSettings(settings: Omit<Settings, 'id'>): Promise<number> {

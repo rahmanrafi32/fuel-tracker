@@ -16,7 +16,9 @@ import {
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { refuels } from '@/config/Database';
+import type { CreateRefuelLogData } from '@/config/Database';
 import {useTheme} from "@/context/ThemeContext";
 import FuelDropDownModal from "@/components/FuelDropDownModal";
 import AppAlertModal from "@/components/AppAlertModal";
@@ -44,6 +46,8 @@ interface FuelEntryScreenProps {
 export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, 'onBack'>) {
     const { theme } = useTheme();
     const navigation = useNavigation();
+    const route = useRoute<RouteProp<any>>();
+    const vehicleId = route.params?.vehicleId;
 
     const [fuelDate, setFuelDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
@@ -53,13 +57,11 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
     const [notes, setNotes] = useState<string>('');
     const [fullTank, setFullTank] = useState<boolean>(true);
     const [missedLastFuel, setMissedLastFuel] = useState<boolean>(false);
-
     const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('KM');
     const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>('L');
     const [showDistanceDropdown, setShowDistanceDropdown] = useState<boolean>(false);
     const [showVolumeDropdown, setShowVolumeDropdown] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
@@ -68,10 +70,43 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
     const distanceUnits: DistanceUnit[] = ['KM', 'Miles'];
     const volumeUnits: VolumeUnit[] = ['L', 'Gallon (US)', 'Gallon (UK)'];
 
+    const convertToStandardUnits = () => {
+        let liters = Number(fuelVolume);
+        let odometerReading = Number(odometer);
+        
+        if (volumeUnit === 'Gallon (US)') {
+            liters = liters * 3.78541;
+        } else if (volumeUnit === 'Gallon (UK)') {
+            liters = liters * 4.54609;
+        }
+
+        if (distanceUnit === 'Miles') {
+            odometerReading = odometerReading * 1.60934;
+        }
+
+        return { liters, odometerReading };
+    };
+
     const handleSave = async (): Promise<void> => {
         try {
             setIsSaving(true);
 
+            const { liters, odometerReading } = convertToStandardUnits();
+            const totalCost = liters * Number(fuelUnitPrice);
+
+            const refuelData: CreateRefuelLogData = {
+                vehicleId,
+                date: fuelDate.toISOString().split('T')[0],
+                odometer: odometerReading,
+                liters: liters,
+                cost: totalCost,
+                fuelType: 'petrol',
+                notes: notes.trim() || undefined,
+                isFullTank: fullTank,
+            };
+
+            await refuels.create(refuelData);
+            
             if (onSave) {
                 const formData: FuelEntryData = {
                     fuelDate,
