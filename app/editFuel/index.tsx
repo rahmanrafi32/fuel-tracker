@@ -26,16 +26,6 @@ import AppAlertModal from "@/components/AppAlertModal";
 
 type DistanceUnit = 'KM' | 'Miles';
 type VolumeUnit = 'L' | 'Gallon (US)' | 'Gallon (UK)';
-
-interface DropdownModalProps {
-    visible: boolean;
-    options: string[];
-    selectedValue: string;
-    onSelect: (value: string) => void;
-    onClose: () => void;
-    title: string;
-}
-
 type RouteParams = {
     editFuel: {
         entryId: string | number;
@@ -75,6 +65,40 @@ export default function EditFuelEntryScreen() {
     const [alertType, setAlertType] = useState<'success' | 'error'>('success');
 
     useEffect(() => {
+        const loadEntryData = async () => {
+            try {
+                setIsLoading(true);
+                setLoadError(null);
+
+                const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
+                const entry = await refuels.findById(id);
+
+                if (entry) {
+                    setFuelDate(new Date(entry.date));
+                    setOdometer(entry.odometer.toString());
+                    setFuelVolume(entry.liters.toString());
+                    setFuelUnitPrice((entry.cost / entry.liters).toFixed(2));
+                    setNotes(entry.notes || '');
+                    setFullTank(entry.isFullTank || false);
+
+                } else {
+                    setLoadError('Entry not found');
+                    setAlertTitle('Error');
+                    setAlertMessage('Entry not found');
+                    setAlertType('error');
+                    setAlertVisible(true);
+                }
+            } catch (error: any) {
+                setLoadError(`Failed to load entry: ${error.message}`);
+                setAlertTitle('Error');
+                setAlertMessage('Failed to load entry data');
+                setAlertType('error');
+                setAlertVisible(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         if (entryId) {
             loadEntryData();
         } else {
@@ -82,40 +106,6 @@ export default function EditFuelEntryScreen() {
             setIsLoading(false);
         }
     }, [entryId]);
-
-    const loadEntryData = async () => {
-        try {
-            setIsLoading(true);
-            setLoadError(null);
-
-            const id = typeof entryId === 'string' ? parseInt(entryId, 10) : entryId;
-            const entry = await refuels.findById(id);
-
-            if (entry) {
-                setFuelDate(new Date(entry.date));
-                setOdometer(entry.odometer.toString());
-                setFuelVolume(entry.liters.toString());
-                setFuelUnitPrice((entry.cost / entry.liters).toFixed(2));
-                setNotes(entry.notes || '');
-                setFullTank(entry.isFullTank || false);
-
-            } else {
-                setLoadError('Entry not found');
-                setAlertTitle('Error');
-                setAlertMessage('Entry not found');
-                setAlertType('error');
-                setAlertVisible(true);
-            }
-        } catch (error: any) {
-            setLoadError(`Failed to load entry: ${error.message}`);
-            setAlertTitle('Error');
-            setAlertMessage('Failed to load entry data');
-            setAlertType('error');
-            setAlertVisible(true);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const convertToStandardUnits = () => {
         let liters = Number(fuelVolume);

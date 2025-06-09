@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import {
     Modal,
     View,
@@ -64,19 +64,9 @@ const AppAlertModal: React.FC<AppAlertModalProps> = ({
             scaleAnim.setValue(0);
             opacityAnim.setValue(0);
         }
-    }, [visible]);
-    
-    useEffect(() => {
-        if (visible && autoClose) {
-            const timer = setTimeout(() => {
-                handleClose();
-            }, autoCloseDelay);
+    }, [opacityAnim, scaleAnim, visible]);
 
-            return () => clearTimeout(timer);
-        }
-    }, [visible, autoClose, autoCloseDelay]);
-
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         Animated.parallel([
             Animated.spring(scaleAnim, {
                 toValue: 0,
@@ -92,7 +82,17 @@ const AppAlertModal: React.FC<AppAlertModalProps> = ({
         ]).start(() => {
             onClose?.();
         });
-    };
+    }, [onClose, scaleAnim, opacityAnim]);
+
+    useEffect(() => {
+        if (visible && autoClose) {
+            const timer = setTimeout(() => {
+                handleClose();
+            }, autoCloseDelay);
+
+            return () => clearTimeout(timer);
+        }
+    }, [visible, autoClose, autoCloseDelay, handleClose]);
 
     const getIconAndColors = () => {
         switch (type) {

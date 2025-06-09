@@ -16,33 +16,8 @@ import {AppText}  from '@/components/AppText';
 import type { RefuelLog } from '@/config/Database';
 import { refuels, vehicles } from '@/config/Database';
 import {useTheme} from "@/context/ThemeContext";
-
-interface FuelEntry {
-    id: number;
-    odometer: string;
-    date: string;
-    distance: string;
-    volume: string;
-    cost: string;
-    rate: string;
-    mileage: string;
-    efficiency: 'excellent' | 'good' | 'poor' | 'unknown';
-}
-
-interface Vehicle {
-    id: number;
-    name: string;
-    make: string;
-    model: string;
-    year: number;
-    licensePlate?: string;
-    fuelType: string;
-    tankCapacity?: number;
-}
-
-interface EntryCardProps {
-    entry: FuelEntry;
-}
+import {FuelEntry, EntryCardProps} from "@/types/refuel";
+import {Vehicle} from "@/types/vehicle";
 
 export default function FuelLogScreen(): JSX.Element {
     const { theme } = useTheme();
@@ -67,7 +42,7 @@ export default function FuelLogScreen(): JSX.Element {
 
             if (prevLog && log.odometer > prevLog.odometer) {
                 const distanceKm = log.odometer - prevLog.odometer;
-                distance = `${distanceKm.toFixed(0)} km`;
+                distance = `${distanceKm.toFixed(0)} KM`;
 
                 const kmPerLiter = distanceKm / log.liters;
                 mileage = kmPerLiter.toFixed(1);
@@ -86,9 +61,9 @@ export default function FuelLogScreen(): JSX.Element {
                 odometer: log.odometer.toLocaleString(),
                 date: new Date(log.date).toLocaleDateString('en-GB'),
                 distance,
-                volume: `${log.liters.toFixed(1)} l`,
+                volume: `${log.liters.toFixed(1)} L`,
                 cost: `${log.cost.toFixed(2)} BDT`,
-                rate: `${log.pricePerLiter.toFixed(1)} BDT/l`,
+                rate: `${log.pricePerLiter.toFixed(1)} BDT/L`,
                 mileage,
                 efficiency,
             };
@@ -173,10 +148,10 @@ export default function FuelLogScreen(): JSX.Element {
         });
     };
 
-    const handleAddVehicle = () => {
+    const handleAddVehicle = useCallback(() => {
         setVehicleDropdownVisible(false);
         router.push('../addVehicle');
-    };
+    }, [router]);
 
     const onSelectVehicle = useCallback((vehicleId: number | 'add_vehicle') => {
         if (vehicleId === 'add_vehicle') {
@@ -186,7 +161,7 @@ export default function FuelLogScreen(): JSX.Element {
             setVehicleDropdownVisible(false);
             fetchFuelEntries(vehicleId);
         }
-    }, [fetchFuelEntries]);
+    }, [fetchFuelEntries, handleAddVehicle]);
 
     const getEfficiencyColor = (efficiency: FuelEntry['efficiency']): string => {
         switch (efficiency) {
@@ -511,24 +486,24 @@ const styles = (theme: any) => StyleSheet.create({
         paddingBottom: 80,
     },
     cardWrapper: {
-        marginHorizontal: 4,
+        marginHorizontal: 8,
         marginBottom: theme.Spacing.md,
     },
     entryCard: {
         backgroundColor: theme.Colors.cardBackground,
-        borderRadius: 20,
-        padding: theme.Spacing.lg,
+        borderRadius: 16,
+        padding: theme.Spacing.md,
         shadowColor: '#000',
         shadowOpacity: 0.15,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 16,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 12,
+        elevation: 6,
     },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: theme.Spacing.md,
+        marginBottom: theme.Spacing.sm,
     },
     badgeContainer: {
         flex: 1,
@@ -537,15 +512,15 @@ const styles = (theme: any) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: theme.Colors.primary,
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         alignSelf: 'flex-start',
     },
     badgeText: {
         color: theme.Colors.white,
         fontWeight: '600',
-        fontSize: 12,
+        fontSize: theme.FontSizes.sm,
         marginLeft: 4,
     },
     odometerContainer: {
@@ -553,11 +528,11 @@ const styles = (theme: any) => StyleSheet.create({
         flex: 1,
     },
     odometerText: {
-        fontSize: 16,
+        fontSize: theme.FontSizes.small,
         color: theme.Colors.textPrimary,
     },
     dateText: {
-        fontSize: 14,
+        fontSize: theme.FontSizes.small,
         color: theme.Colors.textSecondary,
         marginTop: 2,
     },
@@ -566,29 +541,29 @@ const styles = (theme: any) => StyleSheet.create({
     },
     mileageRow: {
         alignItems: 'center',
-        marginBottom: theme.Spacing.md,
+        marginBottom: theme.Spacing.sm,
     },
     mileageContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(102, 126, 234, 0.1)',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
     },
     mileageValue: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '800',
         color: theme.Colors.primary,
     },
     mileageUnit: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: theme.Colors.textSecondary,
         marginLeft: 4,
     },
     efficiencyIcon: {
-        marginLeft: 8,
+        marginLeft: 6,
     },
     statsGrid: {
         flexDirection: 'row',
@@ -599,30 +574,30 @@ const styles = (theme: any) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         width: '48%',
-        marginBottom: theme.Spacing.sm,
+        marginBottom: theme.Spacing.xs,
         backgroundColor: 'rgba(255,255,255,0.6)',
         padding: 12,
         borderRadius: 12,
     },
     statDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        marginRight: 8,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: 6,
     },
     statContent: {
         flex: 1,
     },
     statLabel: {
-        fontSize: 12,
+        fontSize: 11,
         color: theme.Colors.textSecondary,
         fontWeight: '500',
     },
     statValue: {
-        fontSize: 14,
+        fontSize: 12,
         color: theme.Colors.textPrimary,
         fontWeight: '600',
-        marginTop: 2,
+        marginTop: 1,
     },
     fab: {
         position: 'absolute',

@@ -5,8 +5,7 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    ScrollView, 
-    DimensionValue,
+    ScrollView,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useTheme} from '@/context/ThemeContext';

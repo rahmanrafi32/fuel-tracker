@@ -6,10 +6,10 @@ export interface Vehicle {
     name: string;
     make: string;
     model: string;
-    year: string;
+    year: number;
     vehicleType: vehicleType;
     fuelType: FuelType;
-    tankCapacity?: string;
+    tankCapacity?: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -18,10 +18,10 @@ export interface VehicleFormData {
     name: string;
     make: string;
     model: string;
-    year: string;
+    year: number;
     vehicleType: vehicleType;
     fuelType: FuelType;
-    tankCapacity: string;
+    tankCapacity: number;
 }
 
 export interface CreateVehicleData {

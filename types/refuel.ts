@@ -105,3 +105,19 @@ export interface DropdownModalProps {
     title: string;
     maxHeight?: DimensionValue;
 }
+
+export interface FuelEntry {
+    id: number;
+    odometer: string;
+    date: string;
+    distance: string;
+    volume: string;
+    cost: string;
+    rate: string;
+    mileage: string;
+    efficiency: 'excellent' | 'good' | 'poor' | 'unknown';
+}
+
+export interface EntryCardProps {
+    entry: FuelEntry;
+}
