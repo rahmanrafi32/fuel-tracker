@@ -50,14 +50,14 @@ export default function ProfileSettingsScreen() {
             toggleValue: isDark,
             onToggle: handleDarkModeToggle,
         },
-        {
-            id: 3,
-            title: 'Settings',
-            icon: 'settings-outline',
-            onPress: () => router.push({
-                pathname: '../appSettings',
-            }),
-        }
+        // {
+        //     id: 3,
+        //     title: 'Settings',
+        //     icon: 'settings-outline',
+        //     onPress: () => router.push({
+        //         pathname: '../appSettings',
+        //     }),
+        // }
     ];
 
     // will integrate later. 

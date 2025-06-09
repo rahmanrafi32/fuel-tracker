@@ -276,6 +276,21 @@ export default function FuelLogScreen(): JSX.Element {
         );
     };
 
+    const getVehicleIcon = (type: string | undefined) => {
+        switch (type?.toLowerCase()) {
+            case 'motorcycle':
+            case 'bike':
+                return 'two-wheeler';
+            case 'truck':
+                return 'local-shipping';
+            case 'suv':
+            case 'car':
+                return 'directions-car';
+            default:
+                return 'directions-car';
+        }
+    };
+
     const VehicleDropdownModal: React.FC<{
         visible: boolean;
         vehicles: Vehicle[];
@@ -372,11 +387,16 @@ export default function FuelLogScreen(): JSX.Element {
                     activeOpacity={0.7}
                 >
                     <MaterialIcons
-                        name="two-wheeler"
+                        name={
+                            getVehicleIcon(
+                                availableVehicles.find((v) => v.id === selectedVehicleId)?.vehicleType
+                            )
+                        }
                         size={24}
                         color={theme.Colors.white}
                         style={styles(theme).vehicleIcon}
                     />
+
                     <AppText style={styles(theme).vehicleText}>
                         {availableVehicles.find((v) => v.id === selectedVehicleId)?.name || 'Vehicle'}
                     </AppText>
@@ -467,7 +487,7 @@ const styles = (theme: any) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: theme.Colors.primary,
-        padding: theme.Spacing.sm,
+        padding: theme.Spacing.md,
         borderRadius: 12,
         marginBottom: theme.Spacing.md,
     },
