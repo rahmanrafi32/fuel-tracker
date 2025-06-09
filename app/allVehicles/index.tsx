@@ -5,8 +5,7 @@ import {
     SafeAreaView,
     TouchableOpacity,
     ScrollView,
-    ActivityIndicator,
-    StatusBar,
+    ActivityIndicator
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -80,7 +79,6 @@ export default function VehiclesScreen() {
     if (loading) {
         return (
             <SafeAreaView style={styles(theme).safeArea}>
-                <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.background} />
                 <View style={[styles(theme).container, styles(theme).centerContent]}>
                     <ActivityIndicator size="large" color={theme.Colors.primary} />
                     <AppText style={styles(theme).loadingText}>Loading your vehicles...</AppText>
@@ -91,7 +89,6 @@ export default function VehiclesScreen() {
 
     return (
         <SafeAreaView style={styles(theme).safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.background} />
             <View style={styles(theme).container}>
                 <View style={styles(theme).header}>
                     <View style={styles(theme).headerRow}>

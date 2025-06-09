@@ -21,7 +21,7 @@ import {FuelEntry, EntryCardProps} from "@/types/refuel";
 import {Vehicle} from "@/types/vehicle";
 
 export default function FuelLogScreen(): JSX.Element {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const router = useRouter();
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -375,6 +375,8 @@ export default function FuelLogScreen(): JSX.Element {
             </SafeAreaView>
         );
     }
+
+    console.log('is dark', isDark)
 
     return (
         <SafeAreaView style={styles(theme).safeArea}>

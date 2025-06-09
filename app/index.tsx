@@ -1,7 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from "react";
 import { initializeDatabase } from "@/config/Database";
-import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator } from "react-native";
 import { AppText } from "@/components/AppText";
 import theme from '@/Themes';
@@ -32,7 +31,6 @@ export default function Index() {
                 <AppText style={{ marginTop: 16 }}>
                     {dbError ? `Database Error: ${dbError}` : 'Initializing Database...'}
                 </AppText>
-                <StatusBar style="auto"/>
             </View>
         );
     }

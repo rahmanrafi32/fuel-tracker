@@ -6,12 +6,11 @@ import {
     TouchableOpacity,
     ScrollView,
     Modal,
-    StatusBar,
     SafeAreaView,
     GestureResponderEvent,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {useNavigation, NavigationProp} from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import {useTheme} from '@/context/ThemeContext';
 import {settings as dbSettings} from '@/config/Database';
 import AppAlertModal, {AlertType} from '@/components/AppAlertModal';
@@ -55,7 +54,7 @@ interface SettingsState {
 type SettingKey = keyof SettingsState;
 
 const SettingsScreen: React.FC = () => {
-    const navigation = useNavigation<NavigationProp<any>>();
+    const router = useRouter();
     const {theme} = useTheme();
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [currentSetting, setCurrentSetting] = useState<SettingKey | ''>('');
@@ -251,13 +250,11 @@ const SettingsScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles(theme).container}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.Colors.white}/>
-
             {/* Fixed Header */}
             <View style={styles(theme).header}>
                 <TouchableOpacity
                     style={styles(theme).backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={() => router.back()}
                     activeOpacity={0.7}
                 >
                     <Ionicons name="arrow-back" size={24} color={theme.Colors.primary}/>

@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { refuels } from '@/config/Database';
 import type { CreateRefuelLogData } from '@/config/Database';
 import {useTheme} from "@/context/ThemeContext";
@@ -45,9 +45,8 @@ interface FuelEntryScreenProps {
 
 export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, 'onBack'>) {
     const { theme } = useTheme();
-    const navigation = useNavigation();
-    const route = useRoute<RouteProp<any>>();
-    const vehicleId = route.params?.vehicleId;
+    const router = useRouter();
+    const { vehicleId } = useLocalSearchParams();
 
     const [fuelDate, setFuelDate] = useState<Date>(new Date());
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
@@ -73,7 +72,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
     const convertToStandardUnits = () => {
         let liters = Number(fuelVolume);
         let odometerReading = Number(odometer);
-        
+
         if (volumeUnit === 'Gallon (US)') {
             liters = liters * 3.78541;
         } else if (volumeUnit === 'Gallon (UK)') {
@@ -95,7 +94,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             const totalCost = liters * Number(fuelUnitPrice);
 
             const refuelData: CreateRefuelLogData = {
-                vehicleId,
+                vehicleId: vehicleId as string,
                 date: fuelDate.toISOString().split('T')[0],
                 odometer: odometerReading,
                 liters: liters,
@@ -106,7 +105,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             };
 
             await refuels.create(refuelData);
-            
+
             if (onSave) {
                 const formData: FuelEntryData = {
                     fuelDate,
@@ -138,7 +137,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
     };
 
     const handleBack = (): void => {
-        navigation.goBack();
+        router.back();
     };
 
     const formatDate = (date: Date): string => {

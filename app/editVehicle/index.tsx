@@ -14,8 +14,7 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import {findVehicleById, updateVehicle, deleteVehicle, UpdateVehicleData} from "@/config/Database/models/vehicle";
 import { FUEL_TYPES, FuelType, VEHICLE_TYPE_LABELS, VehicleFormData } from "@/types/vehicle";
@@ -23,7 +22,7 @@ import VehicleInputField from "@/components/VehicleInputField";
 import VehicleDropDownModal from "@/components/VehicleDropDownModal";
 
 export default function EditVehicleScreen(): JSX.Element {
-    const navigation = useNavigation();
+    const router = useRouter();
     const { theme } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -54,7 +53,7 @@ export default function EditVehicleScreen(): JSX.Element {
     useEffect(() => {
         const loadVehicle = async () => {
             if (!id) {
-                navigation.goBack();
+                router.back();
                 return;
             }
 
@@ -72,19 +71,19 @@ export default function EditVehicleScreen(): JSX.Element {
                     });
                 } else {
                     Alert.alert("Error", "Vehicle not found");
-                    navigation.goBack();
+                    router.back();
                 }
             } catch (error) {
                 console.error("Error loading vehicle:", error);
                 Alert.alert("Error", "Failed to load vehicle details");
-                navigation.goBack();
+                router.back();
             } finally {
                 setLoading(false);
             }
         };
 
         loadVehicle();
-    }, [id, navigation]);
+    }, [id, router]);
 
     useEffect(() => {
         const keyboardWillShowListener = Keyboard.addListener(
@@ -203,7 +202,7 @@ export default function EditVehicleScreen(): JSX.Element {
             console.log("Vehicle updated successfully");
 
             Alert.alert("Success", "Vehicle updated successfully", [
-                { text: "OK", onPress: () => navigation.goBack() },
+                { text: "OK", onPress: () => router.back() },
             ]);
         } catch (error) {
             console.error("Error updating vehicle:", error);
@@ -235,7 +234,7 @@ export default function EditVehicleScreen(): JSX.Element {
             Alert.alert(
                 "Success",
                 "Vehicle deleted successfully",
-                [{ text: "OK", onPress: () => navigation.goBack() }]
+                [{ text: "OK", onPress: () => router.back() }]
             );
         } catch (error) {
             console.error("Error deleting vehicle:", error);
@@ -259,7 +258,7 @@ export default function EditVehicleScreen(): JSX.Element {
             <View style={styles(theme).header}>
                 <TouchableOpacity
                     style={styles(theme).backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={() => router.back()}
                     activeOpacity={0.7}
                     disabled={isSubmitting || isDeleting}
                 >

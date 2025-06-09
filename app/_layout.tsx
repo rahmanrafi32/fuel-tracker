@@ -1,15 +1,24 @@
 import {Stack} from "expo-router";
-import {SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {StyleSheet} from "react-native";
-import {ThemeProvider} from '@/context/ThemeContext';
+import {ThemeProvider, useTheme} from '@/context/ThemeContext';
+import {StatusBar} from "expo-status-bar";
+import React from "react";
 
 export default function RootLayout() {
+    const { theme, isDark } = useTheme();
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-            <ThemeProvider>
-                <Stack screenOptions={{headerShown: false}}/>
-            </ThemeProvider>
-        </SafeAreaView>
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+                <StatusBar
+                    style={isDark ? "light" : "dark"}
+                    backgroundColor={theme.Colors.white}
+                />
+                <ThemeProvider>
+                    <Stack screenOptions={{headerShown: false}}/>
+                </ThemeProvider>
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 }
 

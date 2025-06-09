@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     SafeAreaView,
-    StatusBar,
     Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,11 +91,6 @@ export default function ProfileSettingsScreen() {
 
     return (
         <SafeAreaView style={styles(theme).container}>
-            <StatusBar
-                barStyle={isDark ? "light-content" : "dark-content"}
-                backgroundColor={theme.Colors.white}
-            />
-
             {/* Header */}
             <View style={styles(theme).newHeader}>
                 <TouchableOpacity

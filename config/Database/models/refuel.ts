@@ -20,7 +20,7 @@ export interface RefuelLog {
 }
 
 export interface CreateRefuelLogData {
-    vehicleId: number;
+    vehicleId: string;
     date: string;
     odometer: number;
     liters: number;

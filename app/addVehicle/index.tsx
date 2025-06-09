@@ -6,37 +6,36 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-
     Alert,
     KeyboardAvoidingView,
     Platform,
     Keyboard,
     Dimensions,
 } from "react-native";
-import {MaterialIcons, Ionicons} from "@expo/vector-icons";
-import {useNavigation} from "@react-navigation/native";
-import {useTheme} from "@/context/ThemeContext";
-import {createVehicle, CreateVehicleData} from "@/config/Database/models/vehicle";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useTheme } from "@/context/ThemeContext";
+import { createVehicle, CreateVehicleData } from "@/config/Database/models/vehicle";
 import {
     FUEL_TYPES,
     FuelType,
     VehicleFormData,
-    VEHICLE_TYPE_LABELS
+    VEHICLE_TYPE_LABELS,
 } from "@/types/vehicle";
 import VehicleInputField from "@/components/VehicleInputField";
 import VehicleDropDownModal from "@/components/VehicleDropDownModal";
 
 export default function AddVehicleScreen(): JSX.Element {
-    const navigation = useNavigation();
-    const {theme} = useTheme();
+    const router = useRouter();
+    const { theme } = useTheme();
     const [formData, setFormData] = useState<VehicleFormData>({
         name: "",
         make: "",
         model: "",
-        year: "",
+        year: 0,
         vehicleType: "car",
         fuelType: "octane",
-        tankCapacity: "",
+        tankCapacity: 0,
     });
 
     const [fuelTypeModalVisible, setFuelTypeModalVisible] = useState(false);
@@ -50,17 +49,17 @@ export default function AddVehicleScreen(): JSX.Element {
     const modelRef = useRef<TextInput>(null);
     const yearRef = useRef<TextInput>(null);
     const tankCapacityRef = useRef<TextInput>(null);
-    
+
     useEffect(() => {
         const keyboardWillShowListener = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
             (e) => {
                 setKeyboardHeight(e.endCoordinates.height);
             }
         );
 
         const keyboardWillHideListener = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
             () => {
                 setKeyboardHeight(0);
             }
@@ -73,43 +72,51 @@ export default function AddVehicleScreen(): JSX.Element {
     }, []);
 
     const handleInputChange = useCallback(
-        (field: keyof VehicleFormData, value: string) => {
-            setFormData((prev) => ({...prev, [field]: value}));
+        (field: keyof VehicleFormData, value: string | number | undefined) => {
+            setFormData((prev) => ({ ...prev, [field]: value }));
         },
-        [],
+        []
     );
-    const scrollToInput = useCallback((ref: RefObject<TextInput | null>) => {
-        if (!ref.current || !scrollViewRef.current) return;
-        const delay = Platform.OS === 'ios' ? 300 : 150;
 
-        setTimeout(() => {
-            if (ref.current && scrollViewRef.current) {
-                ref.current.measureInWindow((_, y, __, ___) => {
-                    if (scrollViewRef.current) {
-                        const screenHeight = Dimensions.get('window').height;
-                        const headerHeight = 120;
-                        const effectiveKeyboardHeight = keyboardHeight || 280;
-                        const safetyPadding = 40;
-                        const availableHeight = screenHeight - headerHeight - effectiveKeyboardHeight - safetyPadding;
-                        const targetPosition = headerHeight + (availableHeight * 0.5);
-                        const scrollOffset = Math.max(0, y - targetPosition);
+    const scrollToInput = useCallback(
+        (ref: RefObject<TextInput | null>) => {
+            if (!ref.current || !scrollViewRef.current) return;
+            const delay = Platform.OS === "ios" ? 300 : 150;
 
-                        scrollViewRef.current.scrollTo({
-                            y: scrollOffset,
-                            animated: true
-                        });
-                    }
-                });
-            }
-        }, delay);
-    }, [keyboardHeight]);
+            setTimeout(() => {
+                if (ref.current && scrollViewRef.current) {
+                    ref.current.measureInWindow((_, y, __, ___) => {
+                        if (scrollViewRef.current) {
+                            const screenHeight = Dimensions.get("window").height;
+                            const headerHeight = 120;
+                            const effectiveKeyboardHeight = keyboardHeight || 280;
+                            const safetyPadding = 40;
+                            const availableHeight =
+                                screenHeight - headerHeight - effectiveKeyboardHeight - safetyPadding;
+                            const targetPosition = headerHeight + availableHeight * 0.5;
+                            const scrollOffset = Math.max(0, y - targetPosition);
 
-    const focusNextField = useCallback((nextRef: RefObject<TextInput | null>) => {
-        setTimeout(() => {
-            nextRef.current?.focus();
-            scrollToInput(nextRef);
-        }, 100);
-    }, [scrollToInput]);
+                            scrollViewRef.current.scrollTo({
+                                y: scrollOffset,
+                                animated: true,
+                            });
+                        }
+                    });
+                }
+            }, delay);
+        },
+        [keyboardHeight]
+    );
+
+    const focusNextField = useCallback(
+        (nextRef: RefObject<TextInput | null>) => {
+            setTimeout(() => {
+                nextRef.current?.focus();
+                scrollToInput(nextRef);
+            }, 100);
+        },
+        [scrollToInput]
+    );
 
     const handleSave = async () => {
         Keyboard.dismiss();
@@ -133,15 +140,7 @@ export default function AddVehicleScreen(): JSX.Element {
             return;
         }
 
-        if (!formData.year.trim()) {
-            Alert.alert("Error", "Vehicle year is required");
-            yearRef.current?.focus();
-            scrollToInput(yearRef);
-            return;
-        }
-
-        const year = parseInt(formData.year, 10);
-        if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
+        if (!formData.year || formData.year < 1900 || formData.year > new Date().getFullYear() + 1) {
             Alert.alert("Error", "Please enter a valid year");
             yearRef.current?.focus();
             scrollToInput(yearRef);
@@ -155,12 +154,10 @@ export default function AddVehicleScreen(): JSX.Element {
                 name: formData.name.trim(),
                 make: formData.make.trim(),
                 model: formData.model.trim(),
-                year,
+                year: formData.year,
                 fuelType: formData.fuelType,
                 vehicleType: formData.vehicleType,
-                tankCapacity: formData.tankCapacity
-                    ? parseFloat(formData.tankCapacity)
-                    : undefined,
+                tankCapacity: formData.tankCapacity,
             };
 
             console.log("Vehicle data to save:", vehicleData);
@@ -169,7 +166,7 @@ export default function AddVehicleScreen(): JSX.Element {
             console.log("Vehicle saved with ID:", vehicleId);
 
             Alert.alert("Success", "Vehicle added successfully", [
-                {text: "OK", onPress: () => navigation.goBack()},
+                { text: "OK", onPress: () => router.back() },
             ]);
         } catch (error) {
             console.error("Error saving vehicle:", error);
@@ -185,7 +182,7 @@ export default function AddVehicleScreen(): JSX.Element {
             <View style={styles(theme).header}>
                 <TouchableOpacity
                     style={styles(theme).backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={() => router.back()}
                     activeOpacity={0.7}
                 >
                     <Ionicons name="arrow-back" size={24} color={theme.Colors.primary}/>
@@ -208,8 +205,9 @@ export default function AddVehicleScreen(): JSX.Element {
                     contentContainerStyle={[
                         styles(theme).scrollContent,
                         {
-                            paddingBottom: keyboardHeight > 0 ? keyboardHeight + 100 : theme.Spacing.xl * 2
-                        }
+                            paddingBottom:
+                                keyboardHeight > 0 ? keyboardHeight + 100 : theme.Spacing.xl * 2,
+                        },
                     ]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
@@ -261,8 +259,11 @@ export default function AddVehicleScreen(): JSX.Element {
                         <VehicleInputField
                             ref={yearRef}
                             label="Year"
-                            value={formData.year}
-                            onChangeText={(text) => handleInputChange("year", text)}
+                            value={formData.year ? formData.year.toString() : ""}
+                            onChangeText={(text) => {
+                                const num = parseInt(text, 10);
+                                handleInputChange("year", isNaN(num) ? 0 : num);
+                            }}
                             placeholder={`e.g. ${new Date().getFullYear()}`}
                             keyboardType="numeric"
                             required
@@ -281,7 +282,12 @@ export default function AddVehicleScreen(): JSX.Element {
                                     size={22}
                                     color={theme.Colors.gray}
                                 />
-                                <Text style={[styles(theme).inputLabel, {color: theme.Colors.textPrimary}]}>
+                                <Text
+                                    style={[
+                                        styles(theme).inputLabel,
+                                        { color: theme.Colors.textPrimary },
+                                    ]}
+                                >
                                     Vehicle Type
                                     <Text style={styles(theme).required}>*</Text>
                                 </Text>
@@ -308,8 +314,15 @@ export default function AddVehicleScreen(): JSX.Element {
                         <VehicleInputField
                             ref={tankCapacityRef}
                             label="Tank Capacity (liters)"
-                            value={formData.tankCapacity}
-                            onChangeText={(text) => handleInputChange("tankCapacity", text)}
+                            value={
+                                formData.tankCapacity !== undefined
+                                    ? formData.tankCapacity.toString()
+                                    : ""
+                            }
+                            onChangeText={(text) => {
+                                const num = parseFloat(text);
+                                handleInputChange("tankCapacity", isNaN(num) ? undefined : num);
+                            }}
                             placeholder="e.g. 50"
                             keyboardType="numeric"
                             icon="opacity"
@@ -329,7 +342,12 @@ export default function AddVehicleScreen(): JSX.Element {
                                     size={22}
                                     color={theme.Colors.gray}
                                 />
-                                <Text style={[styles(theme).inputLabel, {color: theme.Colors.textPrimary}]}>
+                                <Text
+                                    style={[
+                                        styles(theme).inputLabel,
+                                        { color: theme.Colors.textPrimary },
+                                    ]}
+                                >
                                     Fuel Type
                                     <Text style={styles(theme).required}>*</Text>
                                 </Text>
@@ -357,14 +375,17 @@ export default function AddVehicleScreen(): JSX.Element {
                     <View style={styles(theme).actionContainer}>
                         <TouchableOpacity
                             style={styles(theme).cancelButton}
-                            onPress={() => navigation.goBack()}
+                            onPress={() => router.back()}
                             activeOpacity={0.7}
                         >
                             <Text style={styles(theme).cancelButtonText}>Cancel</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles(theme).saveButton, isSubmitting && styles(theme).disabledButton]}
+                            style={[
+                                styles(theme).saveButton,
+                                isSubmitting && styles(theme).disabledButton,
+                            ]}
                             onPress={handleSave}
                             disabled={isSubmitting}
                             activeOpacity={0.8}
@@ -400,234 +421,235 @@ export default function AddVehicleScreen(): JSX.Element {
     );
 }
 
-const styles = (theme: any) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.Colors.background,
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: theme.Spacing.md,
-        paddingTop: theme.Spacing.lg,
-        paddingBottom: theme.Spacing.md,
-        backgroundColor: theme.Colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
-        zIndex: 1000,
-        elevation: 5,
-        shadowColor: "#000",
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-    },
-    backButton: {
-        padding: theme.Spacing.sm,
-        marginRight: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm
-    },
-    headerContent: {
-        flex: 1,
-    },
-    headerTitle: {
-        fontSize: theme.FontSizes.xl,
-        fontWeight: theme.FontWeight.bold,
-        color: theme.Colors.textHeader,
-        marginBottom: 2,
-    },
-    headerSubtitle: {
-        fontSize: theme.FontSizes.small,
-        color: theme.Colors.textSecondary,
-    },
-    formWrapper: {
-        flex: 1,
-        backgroundColor: theme.Colors.white,
-    },
-    formContainer: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        paddingTop: theme.Spacing.md,
-    },
-    formSection: {
-        paddingHorizontal: theme.Spacing.md,
-    },
-    inputContainer: {
-        marginBottom: theme.Spacing.lg,
-    },
-    labelContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: theme.Spacing.sm,
-    },
-    inputLabel: {
-        fontSize: theme.FontSizes.medium,
-        fontWeight: theme.FontWeight.medium,
-        marginLeft: theme.Spacing.sm,
-    },
-    required: {
-        color: theme.Colors.error,
-        marginLeft: 2,
-    },
-    inputWrapper: {
-        borderWidth: 1.5,
-        borderColor: theme.Colors.gray,
-        borderRadius: theme.BorderRadius.md,
-        backgroundColor: theme.Colors.white,
-        minHeight: 56,
-        justifyContent: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0,
-        shadowRadius: 0,
-        elevation: 0,
-    },
-    inputWrapperFocused: {
-        borderColor: theme.Colors.primary,
-        shadowColor: theme.Colors.primary,
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    inputWrapperFilled: {
-        borderColor: theme.Colors.primary,
-    },
-    textInput: {
-        paddingHorizontal: theme.Spacing.md,
-        paddingVertical: theme.Spacing.md,
-        fontSize: theme.FontSizes.medium,
-        color: theme.Colors.textPrimary,
-        minHeight: 24,
-    },
-    dropdownButton: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderWidth: 1.5,
-        borderColor: theme.Colors.gray,
-        borderRadius: theme.BorderRadius.md,
-        paddingHorizontal: theme.Spacing.md,
-        paddingVertical: theme.Spacing.md,
-        backgroundColor: theme.Colors.white,
-        minHeight: 56,
-    },
-    dropdownButtonText: {
-        fontSize: theme.FontSizes.medium,
-        color: theme.Colors.textPrimary,
-        fontWeight: theme.FontWeight.medium,
-    },
-    actionContainer: {
-        flexDirection: "row",
-        paddingHorizontal: theme.Spacing.md,
-        paddingTop: theme.Spacing.sm,
-        paddingBottom: theme.Spacing.sm,
-        marginTop: theme.Spacing.lg,
-        gap: theme.Spacing.sm,
-    },
-    cancelButton: {
-        flex: 1,
-        borderWidth: 2,
-        borderColor: theme.Colors.gray,
-        borderRadius: theme.BorderRadius.md,
-        paddingVertical: theme.Spacing.md,
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 56,
-    },
-    cancelButtonText: {
-        fontSize: theme.FontSizes.medium,
-        fontWeight: theme.FontWeight.medium,
-        color: theme.Colors.gray,
-    },
-    saveButton: {
-        flex: 2,
-        backgroundColor: theme.Colors.primary,
-        borderRadius: theme.BorderRadius.md,
-        paddingVertical: theme.Spacing.md,
-        paddingHorizontal: theme.Spacing.lg,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "row",
-        minHeight: 56,
-        shadowColor: theme.Colors.primary,
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    saveButtonText: {
-        color: theme.Colors.white,
-        fontSize: theme.FontSizes.medium,
-        fontWeight: theme.FontWeight.bold,
-        marginRight: theme.Spacing.xs,
-    },
-    disabledButton: {
-        opacity: 0.6,
-        shadowOpacity: 0.1,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: "flex-end",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-    },
-    modalContent: {
-        backgroundColor: theme.Colors.white,
-        borderTopLeftRadius: theme.BorderRadius.lg,
-        borderTopRightRadius: theme.BorderRadius.lg,
-        paddingBottom: theme.Spacing.lg,
-        maxHeight: "70%",
-    },
-    modalHandle: {
-        width: 40,
-        height: 4,
-        backgroundColor: theme.Colors.gray,
-        borderRadius: 2,
-        alignSelf: "center",
-        marginTop: theme.Spacing.sm,
-        marginBottom: theme.Spacing.sm,
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: theme.Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
-    },
-    modalTitle: {
-        fontSize: theme.FontSizes.large,
-        fontWeight: theme.FontWeight.bold,
-        color: theme.Colors.textPrimary,
-    },
-    closeButton: {
-        padding: theme.Spacing.sm,
-        borderRadius: theme.BorderRadius.sm
-    },
-    modalOption: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: theme.Spacing.md,
-        paddingVertical: theme.Spacing.md
-    },
-    selectedOption: {
-        backgroundColor: `${theme.Colors.primary}20`,
-    },
-    modalOptionText: {
-        fontSize: theme.FontSizes.medium,
-        color: theme.Colors.textPrimary,
-    },
-    selectedOptionText: {
-        color: theme.Colors.primary,
-        fontWeight: theme.FontWeight.medium,
-    },
-    checkIconContainer: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: theme.Colors.primary,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-});
+const styles = (theme: any) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme.Colors.background,
+        },
+        header: {
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: theme.Spacing.md,
+            paddingTop: theme.Spacing.lg,
+            paddingBottom: theme.Spacing.md,
+            backgroundColor: theme.Colors.white,
+            borderBottomWidth: 1,
+            borderBottomColor: "#f1f5f9",
+            zIndex: 1000,
+            elevation: 5,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+        },
+        backButton: {
+            padding: theme.Spacing.sm,
+            marginRight: theme.Spacing.sm,
+            borderRadius: theme.BorderRadius.sm,
+        },
+        headerContent: {
+            flex: 1,
+        },
+        headerTitle: {
+            fontSize: theme.FontSizes.xl,
+            fontWeight: theme.FontWeight.bold,
+            color: theme.Colors.textHeader,
+            marginBottom: 2,
+        },
+        headerSubtitle: {
+            fontSize: theme.FontSizes.small,
+            color: theme.Colors.textSecondary,
+        },
+        formWrapper: {
+            flex: 1,
+            backgroundColor: theme.Colors.white,
+        },
+        formContainer: {
+            flex: 1,
+        },
+        scrollContent: {
+            flexGrow: 1,
+            paddingTop: theme.Spacing.md,
+        },
+        formSection: {
+            paddingHorizontal: theme.Spacing.md,
+        },
+        inputContainer: {
+            marginBottom: theme.Spacing.lg,
+        },
+        labelContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: theme.Spacing.sm,
+        },
+        inputLabel: {
+            fontSize: theme.FontSizes.medium,
+            fontWeight: theme.FontWeight.medium,
+            marginLeft: theme.Spacing.sm,
+        },
+        required: {
+            color: theme.Colors.error,
+            marginLeft: 2,
+        },
+        inputWrapper: {
+            borderWidth: 1.5,
+            borderColor: theme.Colors.gray,
+            borderRadius: theme.BorderRadius.md,
+            backgroundColor: theme.Colors.white,
+            minHeight: 56,
+            justifyContent: "center",
+            shadowColor: "#000",
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            elevation: 0,
+        },
+        inputWrapperFocused: {
+            borderColor: theme.Colors.primary,
+            shadowColor: theme.Colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 6,
+        },
+        inputWrapperFilled: {
+            borderColor: theme.Colors.primary,
+        },
+        textInput: {
+            paddingHorizontal: theme.Spacing.md,
+            paddingVertical: theme.Spacing.md,
+            fontSize: theme.FontSizes.medium,
+            color: theme.Colors.textPrimary,
+            minHeight: 24,
+        },
+        dropdownButton: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderWidth: 1.5,
+            borderColor: theme.Colors.gray,
+            borderRadius: theme.BorderRadius.md,
+            paddingHorizontal: theme.Spacing.md,
+            paddingVertical: theme.Spacing.md,
+            backgroundColor: theme.Colors.white,
+            minHeight: 56,
+        },
+        dropdownButtonText: {
+            fontSize: theme.FontSizes.medium,
+            color: theme.Colors.textPrimary,
+            fontWeight: theme.FontWeight.medium,
+        },
+        actionContainer: {
+            flexDirection: "row",
+            paddingHorizontal: theme.Spacing.md,
+            paddingTop: theme.Spacing.sm,
+            paddingBottom: theme.Spacing.sm,
+            marginTop: theme.Spacing.lg,
+            gap: theme.Spacing.sm,
+        },
+        cancelButton: {
+            flex: 1,
+            borderWidth: 2,
+            borderColor: theme.Colors.gray,
+            borderRadius: theme.BorderRadius.md,
+            paddingVertical: theme.Spacing.md,
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 56,
+        },
+        cancelButtonText: {
+            fontSize: theme.FontSizes.medium,
+            fontWeight: theme.FontWeight.medium,
+            color: theme.Colors.gray,
+        },
+        saveButton: {
+            flex: 2,
+            backgroundColor: theme.Colors.primary,
+            borderRadius: theme.BorderRadius.md,
+            paddingVertical: theme.Spacing.md,
+            paddingHorizontal: theme.Spacing.lg,
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "row",
+            minHeight: 56,
+            shadowColor: theme.Colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 6,
+        },
+        saveButtonText: {
+            color: theme.Colors.white,
+            fontSize: theme.FontSizes.medium,
+            fontWeight: theme.FontWeight.bold,
+            marginRight: theme.Spacing.xs,
+        },
+        disabledButton: {
+            opacity: 0.6,
+            shadowOpacity: 0.1,
+        },
+        modalOverlay: {
+            flex: 1,
+            justifyContent: "flex-end",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+        },
+        modalContent: {
+            backgroundColor: theme.Colors.white,
+            borderTopLeftRadius: theme.BorderRadius.lg,
+            borderTopRightRadius: theme.BorderRadius.lg,
+            paddingBottom: theme.Spacing.lg,
+            maxHeight: "70%",
+        },
+        modalHandle: {
+            width: 40,
+            height: 4,
+            backgroundColor: theme.Colors.gray,
+            borderRadius: 2,
+            alignSelf: "center",
+            marginTop: theme.Spacing.sm,
+            marginBottom: theme.Spacing.sm,
+        },
+        modalHeader: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: theme.Spacing.md,
+            borderBottomWidth: 1,
+            borderBottomColor: "#f1f5f9",
+        },
+        modalTitle: {
+            fontSize: theme.FontSizes.large,
+            fontWeight: theme.FontWeight.bold,
+            color: theme.Colors.textPrimary,
+        },
+        closeButton: {
+            padding: theme.Spacing.sm,
+            borderRadius: theme.BorderRadius.sm,
+        },
+        modalOption: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: theme.Spacing.md,
+            paddingVertical: theme.Spacing.md,
+        },
+        selectedOption: {
+            backgroundColor: `${theme.Colors.primary}20`,
+        },
+        modalOptionText: {
+            fontSize: theme.FontSizes.medium,
+            color: theme.Colors.textPrimary,
+        },
+        selectedOptionText: {
+            color: theme.Colors.primary,
+            fontWeight: theme.FontWeight.medium,
+        },
+        checkIconContainer: {
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: theme.Colors.primary,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+    });
