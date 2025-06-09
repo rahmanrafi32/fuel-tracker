@@ -19,7 +19,7 @@ interface DropdownModalProps {
     title: string;
 }
 
-const DropdownModal: React.FC<DropdownModalProps> = ({
+const VehicleDropDownModal: React.FC<DropdownModalProps> = ({
                                                          visible,
                                                          options,
                                                          selectedValue,
@@ -142,4 +142,4 @@ const styles = (theme: any) => StyleSheet.create({
     },
 });
 
-export default DropdownModal;
+export default VehicleDropDownModal;

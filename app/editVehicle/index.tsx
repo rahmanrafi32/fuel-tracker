@@ -19,8 +19,8 @@ import { useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { findVehicleById, updateVehicle, deleteVehicle } from "@/config/Database/models/vehicle";
 import { FUEL_TYPES, FuelType, VEHICLE_TYPE_LABELS, VehicleFormData } from "@/types/vehicle";
-import InputField from "@/components/InputField";
-import DropdownModal from "@/components/DropDownModal";
+import VehicleInputField from "@/components/VehicleInputField";
+import VehicleDropDownModal from "@/components/VehicleDropDownModal";
 
 export default function EditVehicleScreen(): JSX.Element {
     const navigation = useNavigation();
@@ -293,7 +293,7 @@ export default function EditVehicleScreen(): JSX.Element {
                     scrollEventThrottle={16}
                 >
                     <View style={styles(theme).formSection}>
-                        <InputField
+                        <VehicleInputField
                             ref={nameRef}
                             label="Vehicle Name"
                             value={formData.name}
@@ -307,7 +307,7 @@ export default function EditVehicleScreen(): JSX.Element {
                             onFocus={() => scrollToInput(nameRef)}
                         />
 
-                        <InputField
+                        <VehicleInputField
                             ref={makeRef}
                             label="Make"
                             value={formData.make}
@@ -321,7 +321,7 @@ export default function EditVehicleScreen(): JSX.Element {
                             onFocus={() => scrollToInput(makeRef)}
                         />
 
-                        <InputField
+                        <VehicleInputField
                             ref={modelRef}
                             label="Model"
                             value={formData.model}
@@ -335,7 +335,7 @@ export default function EditVehicleScreen(): JSX.Element {
                             onFocus={() => scrollToInput(modelRef)}
                         />
 
-                        <InputField
+                        <VehicleInputField
                             ref={yearRef}
                             label="Year"
                             value={formData.year}
@@ -382,7 +382,7 @@ export default function EditVehicleScreen(): JSX.Element {
                             </TouchableOpacity>
                         </View>
 
-                        <InputField
+                        <VehicleInputField
                             ref={tankCapacityRef}
                             label="Tank Capacity (liters)"
                             value={formData.tankCapacity}
@@ -468,7 +468,7 @@ export default function EditVehicleScreen(): JSX.Element {
             </KeyboardAvoidingView>
 
             {/* Vehicle Type Modal */}
-            <DropdownModal
+            <VehicleDropDownModal
                 visible={vehicleTypeModalVisible}
                 options={VEHICLE_TYPE_LABELS}
                 selectedValue={formData.vehicleType}
@@ -478,7 +478,7 @@ export default function EditVehicleScreen(): JSX.Element {
             />
 
             {/* Fuel Type Modal */}
-            <DropdownModal
+            <VehicleDropDownModal
                 visible={fuelTypeModalVisible}
                 options={FUEL_TYPES}
                 selectedValue={formData.fuelType}

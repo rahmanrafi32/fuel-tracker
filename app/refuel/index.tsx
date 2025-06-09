@@ -20,6 +20,8 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { refuels } from '@/config/Database';
 import type { CreateRefuelLogData } from '@/config/Database';
 import {useTheme} from "@/context/ThemeContext";
+import FuelDropDownModal from "@/components/FuelDropDownModal";
+import AppAlertModal from "@/components/AppAlertModal";
 
 interface FuelEntryData {
     fuelDate: Date;
@@ -35,15 +37,6 @@ interface FuelEntryData {
 
 type DistanceUnit = 'KM' | 'Miles';
 type VolumeUnit = 'L' | 'Gallon (US)' | 'Gallon (UK)';
-
-interface DropdownModalProps {
-    visible: boolean;
-    options: string[];
-    selectedValue: string;
-    onSelect: (value: string) => void;
-    onClose: () => void;
-    title: string;
-}
 
 interface FuelEntryScreenProps {
     onBack?: () => void;
@@ -119,8 +112,6 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
 
             const refuelId = await refuels.create(refuelData);
 
-            console.log('Refuel saved successfully with ID:', refuelId);
-
             if (onSave) {
                 const formData: FuelEntryData = {
                     fuelDate,
@@ -169,88 +160,6 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             setFuelDate(selectedDate);
         }
     };
-
-    const DropdownModal: React.FC<DropdownModalProps> = ({
-                                                             visible,
-                                                             options,
-                                                             selectedValue,
-                                                             onSelect,
-                                                             onClose,
-                                                             title,
-                                                         }) => (
-        <Modal visible={visible} transparent animationType="fade">
-            <TouchableOpacity style={styles(theme).modalOverlay} onPress={onClose} activeOpacity={1}>
-                <View style={styles(theme).dropdownModal}>
-                    <Text style={styles(theme).dropdownTitle}>{title}</Text>
-                    {options.map((option: string) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[styles(theme).dropdownOption, selectedValue === option && styles(theme).selectedOption]}
-                            onPress={() => {
-                                onSelect(option);
-                                onClose();
-                            }}
-                        >
-                            <Text
-                                style={[
-                                    styles(theme).dropdownOptionText,
-                                    selectedValue === option && styles(theme).selectedOptionText,
-                                ]}
-                            >
-                                {option}
-                            </Text>
-                            {selectedValue === option && (
-                                <Ionicons name="checkmark" size={20} color={theme.Colors.primary} />
-                            )}
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </TouchableOpacity>
-        </Modal>
-    );
-
-    const CustomAlertModal = () => (
-        <Modal visible={alertVisible} transparent animationType="fade">
-            <View style={styles(theme).alertOverlay}>
-                <View
-                    style={[
-                        styles(theme).alertContainer,
-                        alertType === 'success'
-                            ? { borderColor: theme.Colors.costGreen }
-                            : { borderColor: theme.Colors.error },
-                    ]}
-                >
-                    <Text
-                        style={[
-                            styles(theme).alertTitle,
-                            alertType === 'success'
-                                ? { color: theme.Colors.costGreen }
-                                : { color: theme.Colors.error },
-                        ]}
-                    >
-                        {alertTitle}
-                    </Text>
-                    <Text style={styles(theme).alertMessage}>{alertMessage}</Text>
-                    <TouchableOpacity
-                        style={[
-                            styles(theme).alertButton,
-                            alertType === 'success'
-                                ? { backgroundColor: theme.Colors.costGreen }
-                                : { backgroundColor: theme.Colors.error },
-                        ]}
-                        onPress={() => {
-                            setAlertVisible(false);
-                            if (alertType === 'success') {
-                                handleBack();
-                            }
-                        }}
-                    >
-                        <Text style={styles(theme).alertButtonText}>OK</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
 
     return (
         <KeyboardAvoidingView
@@ -444,7 +353,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                     </View>
 
                     {/* Dropdowns */}
-                    <DropdownModal
+                    <FuelDropDownModal
                         visible={showDistanceDropdown}
                         options={distanceUnits}
                         selectedValue={distanceUnit}
@@ -453,7 +362,7 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
                         title="Select Distance Unit"
                     />
 
-                    <DropdownModal
+                    <FuelDropDownModal
                         visible={showVolumeDropdown}
                         options={volumeUnits}
                         selectedValue={volumeUnit}
@@ -474,7 +383,20 @@ export default function FuelEntryScreen({ onSave }: Omit<FuelEntryScreenProps, '
             )}
 
             {/* Custom Alert Modal */}
-            <CustomAlertModal />
+            <AppAlertModal
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                type={alertType}
+                onClose={() => {
+                    setAlertVisible(false);
+                    if (alertType === 'success') {
+                        handleBack();
+                    }
+                }}
+                autoClose={false}
+                autoCloseDelay={3000}
+            />
         </KeyboardAvoidingView>
     );
 }

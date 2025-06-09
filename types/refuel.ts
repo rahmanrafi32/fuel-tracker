@@ -1,4 +1,5 @@
 import { FuelType } from './vehicle';
+import {DimensionValue} from "react-native";
 
 export interface RefuelLog {
     id: number;
@@ -93,4 +94,14 @@ export type SortOrder = 'asc' | 'desc';
 export interface RefuelSortOptions {
     sortBy: RefuelSortBy;
     order: SortOrder;
+}
+
+export interface DropdownModalProps {
+    visible: boolean;
+    options: string[] | Record<string, string>;
+    selectedValue: string;
+    onSelect: (value: string) => void;
+    onClose: () => void;
+    title: string;
+    maxHeight?: DimensionValue;
 }

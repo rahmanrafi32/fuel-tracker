@@ -24,7 +24,7 @@ interface InputFieldProps {
     onFocus?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 }
 
-const InputField = React.forwardRef<TextInput, InputFieldProps>(
+const VehicleInputField = React.forwardRef<TextInput, InputFieldProps>(
     (
         {
             label,
@@ -94,7 +94,7 @@ const InputField = React.forwardRef<TextInput, InputFieldProps>(
     }
 );
 
-InputField.displayName = 'InputField';
+VehicleInputField.displayName = 'InputField';
 
 const styles = (theme: any) => StyleSheet.create({
     inputContainer: {
@@ -146,4 +146,4 @@ const styles = (theme: any) => StyleSheet.create({
     },
 });
 
-export default InputField;
+export default VehicleInputField;
