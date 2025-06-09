@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import {getLocales} from 'expo-localization';
 import {AppText}  from '@/components/AppText';
 import type { RefuelLog } from '@/config/Database';
 import { refuels, vehicles } from '@/config/Database';
@@ -22,7 +23,6 @@ import {Vehicle} from "@/types/vehicle";
 export default function FuelLogScreen(): JSX.Element {
     const { theme } = useTheme();
     const router = useRouter();
-
     const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -32,6 +32,12 @@ export default function FuelLogScreen(): JSX.Element {
     const [vehicleDropdownVisible, setVehicleDropdownVisible] = useState<boolean>(false);
     const [vehicleLoading, setVehicleLoading] = useState<boolean>(false);
 
+    const getLocaleDateString = (date: Date): string => {
+        const locales = getLocales();
+        const languageTags = locales.map(locale => locale.languageTag);
+        return date.toLocaleDateString(languageTags.length > 0 ? languageTags : ['bn-BD']);
+    };
+    
     const transformRefuelLogToFuelEntry = useCallback((refuelLogs: RefuelLog[]): FuelEntry[] => {
         return refuelLogs.map((log, index) => {
             const prevLog = refuelLogs[index + 1];
@@ -59,7 +65,7 @@ export default function FuelLogScreen(): JSX.Element {
             return {
                 id: log.id,
                 odometer: log.odometer.toLocaleString(),
-                date: new Date(log.date).toLocaleDateString('en-GB'),
+                date: getLocaleDateString(new Date(log.date)),
                 distance,
                 volume: `${log.liters.toFixed(1)} L`,
                 cost: `${log.cost.toFixed(2)} BDT`,
