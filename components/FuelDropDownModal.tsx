@@ -98,7 +98,6 @@ const FuelDropDownModal: React.FC<DropdownModalProps> = ({
 const styles = (theme: any) => StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: theme.Spacing.lg,
