@@ -376,8 +376,6 @@ export default function FuelLogScreen(): JSX.Element {
         );
     }
 
-    console.log('is dark', isDark)
-
     return (
         <SafeAreaView style={styles(theme).safeArea}>
             <View style={styles(theme).container}>

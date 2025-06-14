@@ -34,6 +34,15 @@ export default function MainLayout() {
                 }}
             />
             <Tabs.Screen
+                name="stats/index"
+                options={{
+                    title: 'Statistics',
+                    tabBarIcon: ({ color }) => (
+                        <MaterialIcons name="query-stats" size={28} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
                 name="settings/index"
                 options={{
                     title: 'Settings',
